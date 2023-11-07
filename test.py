@@ -13,7 +13,7 @@ def on_model(m):
     print(m)
 
 
-def main():
+def test():
     ctl = clingo.control.Control()
     ctl.add("base", [], """
     p(@inc(10)).
@@ -21,7 +21,3 @@ def main():
     """)
     ctl.ground([("base", [])], context=Context())
     print(ctl.solve(on_model=on_model))
-
-
-if __name__ == "__main__":
-    main()
