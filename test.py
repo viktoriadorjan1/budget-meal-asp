@@ -15,14 +15,9 @@ def on_model(m):
     file.close()
 
 
-def test():
+def test(to_solve):
     ctl = clingo.control.Control()
-    ctl.add("base", [], """
-    motive(harry).
-    motive(sally).
-    guilty(harry).
-    innocent(Suspect) :- motive(Suspect), not guilty(Suspect).
-    """)
+    ctl.add("base", [], str(to_solve))
     ctl.ground([("base", [])], context=Context())
     return ctl.solve(on_model=on_model)
 
