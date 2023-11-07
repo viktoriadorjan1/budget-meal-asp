@@ -11,4 +11,4 @@ def hello():
 
 @app.route('/')
 def hello_world():
-    return test()
+    return str(test())
