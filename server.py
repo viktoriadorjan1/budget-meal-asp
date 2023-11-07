@@ -1,5 +1,7 @@
 from flask import Flask
 
+from test import test
+
 app = Flask(__name__)
 
 
@@ -9,4 +11,4 @@ def hello():
 
 @app.route('/')
 def hello_world():
-    return hello()
+    return test()

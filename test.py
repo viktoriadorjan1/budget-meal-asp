@@ -20,4 +20,4 @@ def test():
     q(@seq(1,2)).
     """)
     ctl.ground([("base", [])], context=Context())
-    print(ctl.solve(on_model=on_model))
+    return ctl.solve(on_model=on_model)
