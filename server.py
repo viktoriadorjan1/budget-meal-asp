@@ -11,8 +11,8 @@ def hello():
 
 @app.route('/')
 def hello_world():
-    file = open("tmp.txt", "r")
     test_result = str(test())
+    file = open("tmp.txt", "r")
     return (file.read()) + '\n' + test_result
 
 
