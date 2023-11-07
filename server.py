@@ -11,4 +11,10 @@ def hello():
 
 @app.route('/')
 def hello_world():
-    return str(test())
+    file = open("tmp.txt", "r")
+    test_result = str(test())
+    return (file.read()) + '\n' + test_result
+
+
+if __name__ == "__main__":
+    hello_world()
