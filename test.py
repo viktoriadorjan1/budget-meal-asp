@@ -10,7 +10,7 @@ class Context:
 
 
 def on_model(m):
-    return m
+    return str(m)
 
 
 def test():
