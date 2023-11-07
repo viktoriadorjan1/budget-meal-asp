@@ -9,4 +9,4 @@ def hello():
 
 @app.route('/')
 def hello_world():
-    hello()
+    return hello()
