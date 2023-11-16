@@ -10,22 +10,21 @@ class Context:
 
 
 def on_model(m):
-    file = open("output.txt", "w")
-    file.write(str(m))
+    print(m)
+    file = open("output.txt", "a")
+    file.write(str(m) + "\n")
     file.close()
 
 
-def test():
+def solve(to_solve):
     ctl = clingo.control.Control()
+    ctl.configuration.solve.models = 0
 
-    inputfile = open("input.txt", "r")
-    ctl.add("base", [], str(inputfile.read()))
-    inputfile.close()
-
-    ctl.ground([("base", [])], context=Context())
+    ctl.add("base", [], to_solve)
+    ctl.ground([("base", [])])
 
     return ctl.solve(on_model=on_model)
 
 
 if __name__ == "__main__":
-    print(test())
+    print(solve(""))

@@ -15,6 +15,11 @@
     "nutrient_needed": {
         "protein": [50, 80]
     },
+    "has_nutrient": {
+        "cereal": {
+            "protein": 50
+        }
+    },
     "needs": {
         "cereal": {
             "cereal_flakes": 300,
