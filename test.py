@@ -10,15 +10,20 @@ class Context:
 
 
 def on_model(m):
-    file = open("tmp.txt", "w")
+    file = open("output.txt", "w")
     file.write(str(m))
     file.close()
 
 
-def test(to_solve):
+def test():
     ctl = clingo.control.Control()
-    ctl.add("base", [], str(to_solve))
+
+    inputfile = open("input.txt", "r")
+    ctl.add("base", [], str(inputfile.read()))
+    inputfile.close()
+
     ctl.ground([("base", [])], context=Context())
+
     return ctl.solve(on_model=on_model)
 
 

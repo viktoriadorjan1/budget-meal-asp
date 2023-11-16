@@ -9,18 +9,19 @@ def hello():
     return "Hello world"
 
 
-def generate_text():
-    # file = open(input_file, "r")
-    return "p."
+def generate_inputfile():
+    file = open("input.txt", "w")
+    file.write("p.")
+    file.close()
 
 
 @app.route('/', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
         # to_solve = request.form["nm"]
-        to_solve = generate_text()
-        test_result = str(test(to_solve))
-        file = open("tmp.txt", "r")
+        generate_inputfile()
+        test_result = str(test())
+        file = open("output.txt", "r")
         return (file.read()) + '\n' + test_result
     else:
         return '''
