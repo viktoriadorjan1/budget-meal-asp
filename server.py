@@ -59,7 +59,7 @@ def generate_inputfile(raw: Dict[str, Any]):
 def home():
     if request.method == "POST":
         # to_solve = request.form["nm"]
-        generate_inputfile()
+        generate_inputfile("raw.json")
         test_result = str(test())
         file = open("output.txt", "r")
         return (file.read()) + '\n' + test_result
