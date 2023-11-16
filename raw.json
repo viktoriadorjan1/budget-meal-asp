@@ -1,0 +1,27 @@
+{
+    "recipe": ["cereal", "sandwich"],
+    "ingredient": ["milk", "cereal_flakes", "bread"],
+    "nutrient": ["protein", "carbs"],
+    "pantry_item": {
+        "milk": 200,
+        "cereal_flakes": 400,
+        "bread": 100
+    },
+    "i_costs": {
+        "milk": [100, 2.00],
+        "cereal_flakes": [400, 4.00],
+        "bread": [1000, 1.00]
+    },
+    "nutrient_needed": {
+        "protein": [50, 80]
+    },
+    "needs": {
+        "cereal": {
+            "cereal_flakes": 300,
+            "milk": 300
+        },
+        "sandwich": {
+            "bread": 200
+        }
+    }
+}
