@@ -94,12 +94,21 @@ total_cost(S) :- S = #sum {T,R,I,A : buy(R, I, A, T)}.
     file_w.close()
 
 
+def get_json_content(json_filename: str):
+    file = open(json_filename, "r")
+    js = json.load(file)
+    file.close()
+
+    return json.dumps(js)
+
+
 @app.route('/', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
-        file = open("raw.json", "r")
-        js = json.load(file)
-        file.close()
+        js = request.json
+        print(js)
+
+        # js = json.loads(request.form['getcontent'])
 
         generate_inputfile(js)
 
@@ -119,18 +128,13 @@ def home():
 
         return ret + " " + str(res)
     else:
+        raw_str = get_json_content('raw.json')
         return '''
         <form action="#" method="post">
-    	    <p>Name:</p>
-    	    <p><input type="text" name="nm" /></p>
-    	    <p><input type="submit" value="submit"/></p>
+            <textarea name="getcontent">{raw_str}</textarea>
+    	    <p><input type="submit" value="generate meal plan"/></p>
         </form>
-        <p>Example:</p>
-        <p>motive(harry).<br>
-        motive(sally).<br>
-        guilty(harry).<br>
-        innocent(Suspect) :- motive(Suspect), not guilty(Suspect).</p>
-        '''
+        '''.format(raw_str=raw_str)
 
 
 if __name__ == "__main__":
