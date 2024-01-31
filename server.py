@@ -128,13 +128,7 @@ def home():
 
         return ret + " " + str(res)
     else:
-        raw_str = get_json_content('raw.json')
-        return '''
-        <form action="#" method="post">
-            <textarea name="getcontent">{raw_str}</textarea>
-    	    <p><input type="submit" value="generate meal plan"/></p>
-        </form>
-        '''.format(raw_str=raw_str)
+        return ''''''
 
 
 if __name__ == "__main__":
