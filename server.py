@@ -3,6 +3,8 @@ from typing import Dict, Any
 
 from flask import Flask, request
 
+from selenium import webdriver
+
 from test import solve
 
 app = Flask(__name__)
@@ -10,6 +12,12 @@ app = Flask(__name__)
 
 def hello():
     return "Hello world"
+
+
+def webscrape():
+    print("Webscraping!")
+    driver = webdriver.Chrome()
+    driver.get('https://www.tesco.com/')
 
 
 def generate_inputfile(raw: Dict[str, Any]):
@@ -105,30 +113,37 @@ def get_json_content(json_filename: str):
 @app.route('/', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
-        js = request.json
-        print(js)
+        webscrape()
 
-        # js = json.loads(request.form['getcontent'])
+        #js = request.json
+        #print(js)
 
-        generate_inputfile(js)
+        #generate_inputfile(js)
 
-        file = open("input.txt", "r")
-        txt = file.read()
-        file.close()
+        #file = open("input.txt", "r")
+        #txt = file.read()
+        #file.close()
 
-        file = open("output.txt", "w")
-        file.write("")
-        file.close()
+        #file = open("output.txt", "w")
+        #file.write("")
+        #file.close()
 
-        res = solve(txt)
+        #res = solve(txt)
 
-        file = open("output.txt", "r")
-        ret = file.read()
-        file.close()
+        #file = open("output.txt", "r")
+        #ret = file.read()
+        #file.close()
 
-        return ret + " " + str(res)
-    else:
+        #return ret + " " + str(res)
         return ''''''
+    else:
+        raw_str = get_json_content('raw.json')
+        return '''
+                <form action="#" method="post">
+                    <textarea name="getcontent">{raw_str}</textarea>
+            	    <p><input type="submit" value="generate meal plan"/></p>
+                </form>
+                '''.format(raw_str=raw_str)
 
 
 if __name__ == "__main__":
