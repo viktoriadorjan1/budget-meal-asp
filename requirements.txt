@@ -2,3 +2,4 @@ Flask
 Gunicorn
 Clingo
 selenium
+chromedriver-binary
