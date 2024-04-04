@@ -4,6 +4,7 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 from test import solve
 
@@ -16,7 +17,9 @@ def hello():
 
 def webscrape():
     print("Webscraping!")
-    driver = webdriver.Chrome()
+    options = Options()
+    options.headless = True
+    driver = webdriver.Chrome(options=options)
     driver.get('https://www.tesco.com/')
 
 
