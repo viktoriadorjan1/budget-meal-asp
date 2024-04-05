@@ -5,6 +5,7 @@ from flask import Flask, request
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
 from test import solve
 
@@ -20,7 +21,15 @@ def webscrape():
     options = Options()
     options.headless = True
     driver = webdriver.Chrome(options=options)
-    driver.get('https://www.tesco.com/')
+
+    # Tesco - fresh food
+    driver.get('https://www.tesco.com/groceries/en-GB/shop/fresh-food/all?page=1&count=48')
+    item_name_elems = driver.find_elements(By.XPATH, "//span[@class='styled__Text-sc-1i711qa-1 xZAYu ddsweb-link__text']")
+
+    item_names = []
+    for i in range(len(item_name_elems)):
+        item_names.append(item_name_elems[i].text)
+        print(item_names[i])
 
 
 def generate_inputfile(raw: Dict[str, Any]):
@@ -82,11 +91,11 @@ def generate_inputfile(raw: Dict[str, Any]):
 schedule_count(R, C) :- C = #count {D,M : schedule(R, D, M)}, recipe(R).
         
 % decides whether the amount we need to buy of an ingredient is integer or not.
-int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R,C).
+int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R, C).
 % buy amount A of ingredient I for a certain recipe R with total cost of T.
 % two cases when it is an integer and when it is not in which case we need to buy 1 more (ceil function)
 buy(R, I, A, T) :- T = P*A, T > 0, int(R, I, A), recipe(R), i_costs(I, A1, P).
-buy(R, I, A, T) :- T = P*A, T > 0, C > 0, A = (((A2 * C)-A3) / A1)+1, not int(R, I, _), recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R,C).
+buy(R, I, A, T) :- T = P*A, T > 0, C > 0, A = (((A2 * C)-A3) / A1)+1, not int(R, I, _), recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R, C).
 
 % total price is the sum of costs of ingredients we need to buy.
 total_cost(S) :- S = #sum {T,R,I,A : buy(R, I, A, T)}.
@@ -150,4 +159,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=81)
