@@ -27,6 +27,7 @@ def webscrape():
     item_name_elems = driver.find_elements(By.XPATH, "//span[@class='styled__Text-sc-1i711qa-1 xZAYu ddsweb-link__text']")
 
     item_names = []
+    print("Item len is : " + len(item_names))
     for i in range(len(item_name_elems)):
         item_names.append(item_name_elems[i].text)
         print(item_names[i])
@@ -48,10 +49,10 @@ def generate_inputfile(raw: Dict[str, Any]):
     for r in raw["recipe"]:
         instance += f"recipe({r}).\n"
 
-    instance += "\n"
+    #instance += "\n"
 
-    for i in raw["ingredient"]:
-        instance += f"ingredient({i}).\n"
+    #for i in raw["ingredient"]:
+    #    instance += f"ingredient({i}).\n"
 
     instance += "\n"
 
