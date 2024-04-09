@@ -27,12 +27,12 @@ def webscrape():
     options.add_argument('user-agent=Chrome/83.0.4103.116')
     options.add_argument("--headless=new")
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(options=options)
 
     # Tesco - fresh food
     driver.get('https://www.tesco.com/groceries/en-GB/shop/fresh-food/all?page=1&count=48')
-    content = driver.page_source
-    print(content)
+    #content = driver.page_source
+    #print(content)
     item_name_elems = driver.find_elements(By.XPATH, "//span[@class='styled__Text-sc-1i711qa-1 xZAYu ddsweb-link__text']")
 
     item_names = []
