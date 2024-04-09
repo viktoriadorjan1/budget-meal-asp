@@ -19,7 +19,13 @@ def hello():
 def webscrape():
     print("Webscraping!")
     options = Options()
-    options.headless = True
+
+    user_agent = ''
+    options.add_argument(f'user-agent=Chrome/83.0.4103.116')
+
+    # options.headless = True
+    options.add_argument('--headless')  # Runs Chrome in headless mode.
+
     driver = webdriver.Chrome(options=options)
 
     # Tesco - fresh food
@@ -28,7 +34,6 @@ def webscrape():
 
     item_names = []
     print("Item len is : " + str(len(item_name_elems)))
-    print("First item is : " + item_name_elems[0].text)
     for i in range(len(item_name_elems)):
         item_names.append(item_name_elems[i].text)
         print(item_names[i])

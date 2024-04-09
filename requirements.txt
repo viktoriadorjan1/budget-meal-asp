@@ -2,5 +2,4 @@ Flask
 Gunicorn
 Clingo
 selenium
-selenium webdriver-manager
 chromedriver-binary
