@@ -20,11 +20,10 @@ def webscrape():
     print("Webscraping!")
     options = Options()
 
-    user_agent = ''
-    options.add_argument(f'user-agent=Chrome/83.0.4103.116')
-
-    # options.headless = True
-    options.add_argument('--headless')  # Runs Chrome in headless mode.
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('user-agent=Chrome/83.0.4103.116')
+    options.add_argument('--headless')
 
     driver = webdriver.Chrome(options=options)
 
