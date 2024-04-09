@@ -27,8 +27,9 @@ def webscrape():
     item_name_elems = driver.find_elements(By.XPATH, "//span[@class='styled__Text-sc-1i711qa-1 xZAYu ddsweb-link__text']")
 
     item_names = []
+    print("Item len is : " + str(len(item_name_elems)))
+    print("First item is : " + item_name_elems[0])
     for i in range(len(item_name_elems)):
-        print("Item len is : " + str(len(item_names)))
         item_names.append(item_name_elems[i].text)
         print(item_names[i])
 
