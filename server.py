@@ -4,7 +4,6 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 from test import solve
@@ -18,7 +17,7 @@ def hello():
 
 def webscrape():
     print("Webscraping!")
-    options = Options()
+    options = webdriver.ChromeOptions()
 
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
