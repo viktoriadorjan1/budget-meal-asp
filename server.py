@@ -6,6 +6,8 @@ from flask import Flask, request
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 
 from test import solve
 
@@ -25,7 +27,7 @@ def webscrape():
     options.add_argument('user-agent=Chrome/83.0.4103.116')
     options.add_argument("--headless=new")
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     # Tesco - fresh food
     driver.get('https://www.tesco.com/groceries/en-GB/shop/fresh-food/all?page=1&count=48')

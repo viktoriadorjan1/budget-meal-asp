@@ -3,3 +3,4 @@ Gunicorn
 Clingo
 selenium
 chromedriver-binary
+webdriver-manager
