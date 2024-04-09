@@ -4,6 +4,7 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 from test import solve
@@ -17,7 +18,7 @@ def hello():
 
 def webscrape():
     print("Webscraping!")
-    options = webdriver.ChromeOptions()
+    options = Options()
 
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
@@ -28,6 +29,8 @@ def webscrape():
 
     # Tesco - fresh food
     driver.get('https://www.tesco.com/groceries/en-GB/shop/fresh-food/all?page=1&count=48')
+    content = driver.page_source
+    print(content)
     item_name_elems = driver.find_elements(By.XPATH, "//span[@class='styled__Text-sc-1i711qa-1 xZAYu ddsweb-link__text']")
 
     item_names = []
