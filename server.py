@@ -23,7 +23,7 @@ def webscrape():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('user-agent=Chrome/83.0.4103.116')
-    options.add_argument('--headless')
+    options.add_argument("--headless=new")
 
     driver = webdriver.Chrome(options=options)
 
