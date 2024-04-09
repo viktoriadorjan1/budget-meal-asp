@@ -28,7 +28,7 @@ def webscrape():
 
     item_names = []
     print("Item len is : " + str(len(item_name_elems)))
-    print("First item is : " + item_name_elems[0])
+    print("First item is : " + item_name_elems[0].text)
     for i in range(len(item_name_elems)):
         item_names.append(item_name_elems[i].text)
         print(item_names[i])
