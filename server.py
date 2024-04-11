@@ -4,10 +4,12 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from selenium import webdriver
+from selenium.common import StaleElementReferenceException
+from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from test import solve
 
@@ -29,17 +31,53 @@ def webscrape():
 
     driver = webdriver.Chrome(options=options)
 
-    # Tesco - fresh food
-    driver.get('https://www.tesco.com/groceries/en-GB/shop/fresh-food/all?page=1&count=48')
-    #content = driver.page_source
-    #print(content)
-    item_name_elems = driver.find_elements(By.XPATH, "//span[@class='styled__Text-sc-1i711qa-1 xZAYu ddsweb-link__text']")
+    # Aldi - search for chicken breast
+    keyword = "chickenbreast"
+    driver.get('https://groceries.aldi.co.uk/en-GB/Search?keywords=' + keyword)
 
-    item_names = []
-    print("Item len is : " + str(len(item_name_elems)))
-    for i in range(len(item_name_elems)):
-        item_names.append(item_name_elems[i].text)
-        print(item_names[i])
+    # accept cookies
+    WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, "//button[@id='onetrust-accept-btn-handler']"))).click()
+    print("Cookies accepted")
+
+    # visits first result
+    while True:
+        items = driver.find_elements(By.XPATH, "//a[@class='p text-default-font']")
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable(items[0])).click()
+            break
+        except StaleElementReferenceException:
+            # refresh the page
+            driver.refresh()
+
+    # get details of product
+    while True:
+        item_name = driver.find_element(By.XPATH, "//h1[@class='my-0']")
+        try:
+            ActionChains(driver).move_to_element(item_name).perform()
+            print("Item name is " + item_name.text)
+            break
+        except StaleElementReferenceException:
+            driver.refresh()
+
+    while True:
+        item_weight = driver.find_element(By.XPATH, "//span[@class='text-black-50 font-weight-bold']")
+        try:
+            ActionChains(driver).move_to_element(item_weight).perform()
+            print("Item weight is " + item_weight.text)
+            break
+        except StaleElementReferenceException:
+            driver.refresh()
+
+    while True:
+        item_price = driver.find_element(By.XPATH, "//span[@class='product-price h4 m-0 font-weight-bold']")
+        try:
+            ActionChains(driver).move_to_element(item_price).perform()
+            print("Item price is " + str(item_price.text))
+            break
+        except StaleElementReferenceException:
+            driver.refresh()
 
 
 def generate_inputfile(raw: Dict[str, Any]):
@@ -58,9 +96,9 @@ def generate_inputfile(raw: Dict[str, Any]):
     for r in raw["recipe"]:
         instance += f"recipe({r}).\n"
 
-    #instance += "\n"
+    # instance += "\n"
 
-    #for i in raw["ingredient"]:
+    # for i in raw["ingredient"]:
     #    instance += f"ingredient({i}).\n"
 
     instance += "\n"
@@ -137,27 +175,31 @@ def home():
     if request.method == "POST":
         webscrape()
 
-        #js = request.json
-        #print(js)
+        js = request.json
+        print(js)
 
-        #generate_inputfile(js)
+        generate_inputfile(js)
 
-        #file = open("input.txt", "r")
-        #txt = file.read()
-        #file.close()
+        print("input generated")
 
-        #file = open("output.txt", "w")
-        #file.write("")
-        #file.close()
+        file = open("input.txt", "r")
+        txt = file.read()
+        file.close()
 
-        #res = solve(txt)
+        file = open("output.txt", "w")
+        file.write("")
+        file.close()
 
-        #file = open("output.txt", "r")
-        #ret = file.read()
-        #file.close()
+        res = solve(txt)
 
-        #return ret + " " + str(res)
-        return ''''''
+        print("solved")
+
+        file = open("output.txt", "r")
+        ret = file.read()
+        file.close()
+
+        return ret + " " + str(res)
+        # return ''''''
     else:
         raw_str = get_json_content('raw.json')
         return '''
@@ -169,4 +211,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=81)
+    app.run(debug=True, port=2000)
