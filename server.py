@@ -11,6 +11,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from test import solve
+from webstores import get_relevant_webstore_data
 
 app = Flask(__name__)
 
@@ -39,47 +40,61 @@ def webscrape():
         EC.element_to_be_clickable((By.XPATH, "//button[@id='onetrust-accept-btn-handler']"))).click()
     print("Cookies accepted")
 
-    # visits first result
-    while True:
-        items = driver.find_elements(By.XPATH, "//a[@class='p text-default-font']")
-        try:
-            WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable(items[0])).click()
-            break
-        except:
-            # refresh the page
-            driver.refresh()
+    # wait until items load
+    WebDriverWait(driver, 10).until(
+        EC.visibility_of_all_elements_located((By.XPATH, "//a[@class='p text-default-font']")))
 
-    # get details of product
-    while True:
-        item_name = driver.find_element(By.XPATH, "//h1[@class='my-0']")
-        try:
-            ActionChains(driver).move_to_element(item_name).perform()
-            print("Item name is " + item_name.text)
-            break
-        except:
-            driver.refresh()
+    # get length of results
+    item_len = len(driver.find_elements(By.XPATH, "//a[@class='p text-default-font']"))
+    print("len is " + str(item_len))
 
-    while True:
-        item_weight = driver.find_element(By.XPATH, "//span[@class='text-black-50 font-weight-bold']")
-        try:
-            ActionChains(driver).move_to_element(item_weight).perform()
-            print("Item weight is " + item_weight.text)
-            break
-        except:
-            driver.refresh()
+    for i in range(item_len):
+        print("iteration " + str(i))
+        while True:
+            try:
+                # get results
+                items = driver.find_elements(By.XPATH, "//a[@class='p text-default-font']")
+                # wait for i-th product to be clickable then click it
+                WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable(items[i])).click()
+                break
+            except:
+                driver.refresh()
 
-    while True:
-        item_price = driver.find_element(By.XPATH, "//span[@class='product-price h4 m-0 font-weight-bold']")
-        try:
-            ActionChains(driver).move_to_element(item_price).perform()
-            print("Item price is " + str(item_price.text))
-            break
-        except:
-            driver.refresh()
+        # get details of i-th product
+        while True:
+            item_name = driver.find_element(By.XPATH, "//h1[@class='my-0']")
+            try:
+                ActionChains(driver).move_to_element(item_name).perform()
+                print("Item name is " + item_name.text)
+                break
+            except:
+                driver.refresh()
+
+        while True:
+            item_weight = driver.find_element(By.XPATH, "//span[@class='text-black-50 font-weight-bold']")
+            try:
+                ActionChains(driver).move_to_element(item_weight).perform()
+                print("Item weight is " + item_weight.text)
+                break
+            except:
+                driver.refresh()
+
+        while True:
+            item_price = driver.find_element(By.XPATH, "//span[@class='product-price h4 m-0 font-weight-bold']")
+            try:
+                ActionChains(driver).move_to_element(item_price).perform()
+                print("Item price is " + str(item_price.text))
+                break
+            except:
+                driver.refresh()
+        # navigate back to search results
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(driver.find_element(By.XPATH, "//a[@class='pull-left']"))).click()
 
 
-def generate_inputfile(raw: Dict[str, Any]):
+
+def generate_inputfile(raw: Dict[str, Any], items):
     instance = ""
 
     instance += "day(monday).\n"
@@ -102,6 +117,11 @@ def generate_inputfile(raw: Dict[str, Any]):
 
     instance += "\n"
 
+    for i in items:
+        instance += f"i_costs{i['tag'], i['weight'], i['price']}.\n"
+
+    instance += "\n"
+
     for r in raw["recipe"]:
         instance += f"recipe({r}).\n"
 
@@ -114,11 +134,6 @@ def generate_inputfile(raw: Dict[str, Any]):
 
     for i, a in raw["pantry_item"].items():
         instance += f"pantry_item({i}, {a}).\n"
-
-    instance += "\n"
-
-    for i, l in raw["i_costs"].items():
-        instance += f"i_costs({i}, {l[0]}, {int(l[1] * 100)}).\n"
 
     instance += "\n"
 
@@ -174,17 +189,24 @@ def get_json_content(json_filename: str):
     return json.dumps(js)
 
 
+def getIngredients(raw: Dict[str, Any]):
+    ingredients = []
+    for i in raw["ingredient"]:
+        ingredients.append(i)
+    return ingredients
+
+
 @app.route('/', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
-        webscrape()
+        #webscrape()
 
         js = request.json
         print(js)
 
-        generate_inputfile(js)
+        webstore = get_relevant_webstore_data(getIngredients(js))
 
-        print("input generated")
+        generate_inputfile(js, webstore)
 
         file = open("input.txt", "r")
         txt = file.read()
@@ -195,8 +217,6 @@ def home():
         file.close()
 
         res = solve(txt)
-
-        print("solved")
 
         file = open("output.txt", "r")
         ret = file.read()
@@ -215,4 +235,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=7800)
+    app.run(debug=True, port=7900)
