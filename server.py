@@ -4,7 +4,6 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from selenium import webdriver
-from selenium.common import StaleElementReferenceException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -47,7 +46,7 @@ def webscrape():
             WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable(items[0])).click()
             break
-        except StaleElementReferenceException:
+        except:
             # refresh the page
             driver.refresh()
 
@@ -58,7 +57,7 @@ def webscrape():
             ActionChains(driver).move_to_element(item_name).perform()
             print("Item name is " + item_name.text)
             break
-        except StaleElementReferenceException:
+        except:
             driver.refresh()
 
     while True:
@@ -67,7 +66,7 @@ def webscrape():
             ActionChains(driver).move_to_element(item_weight).perform()
             print("Item weight is " + item_weight.text)
             break
-        except StaleElementReferenceException:
+        except:
             driver.refresh()
 
     while True:
@@ -76,7 +75,7 @@ def webscrape():
             ActionChains(driver).move_to_element(item_price).perform()
             print("Item price is " + str(item_price.text))
             break
-        except StaleElementReferenceException:
+        except:
             driver.refresh()
 
 
@@ -93,6 +92,16 @@ def generate_inputfile(raw: Dict[str, Any]):
 
     instance += "\n"
 
+    instance += "nutrient(energy).\n"
+    instance += "nutrient(protein).\n"
+    instance += "nutrient(fats).\n"
+    instance += "nutrient(saturates).\n"
+    instance += "nutrient(carbs).\n"
+    instance += "nutrient(sugars).\n"
+    instance += "nutrient(salt).\n"
+
+    instance += "\n"
+
     for r in raw["recipe"]:
         instance += f"recipe({r}).\n"
 
@@ -100,11 +109,6 @@ def generate_inputfile(raw: Dict[str, Any]):
 
     # for i in raw["ingredient"]:
     #    instance += f"ingredient({i}).\n"
-
-    instance += "\n"
-
-    for n in raw["nutrient"]:
-        instance += f"nutrient({n}).\n"
 
     instance += "\n"
 
@@ -211,4 +215,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=2000)
+    app.run(debug=True, port=7800)
