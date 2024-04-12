@@ -3,13 +3,6 @@ from typing import Dict, Any
 
 from flask import Flask, request
 
-from selenium import webdriver
-from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
 from test import solve
 from webstores import get_relevant_webstore_data
 
@@ -18,80 +11,6 @@ app = Flask(__name__)
 
 def hello():
     return "Hello world"
-
-
-def webscrape():
-    print("Webscraping!")
-    options = Options()
-
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('user-agent=Chrome/83.0.4103.116')
-    options.add_argument("--headless=new")
-
-    driver = webdriver.Chrome(options=options)
-
-    # Aldi - search for chicken breast
-    keyword = "chickenbreast"
-    driver.get('https://groceries.aldi.co.uk/en-GB/Search?keywords=' + keyword)
-
-    # accept cookies
-    WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[@id='onetrust-accept-btn-handler']"))).click()
-    print("Cookies accepted")
-
-    # wait until items load
-    WebDriverWait(driver, 10).until(
-        EC.visibility_of_all_elements_located((By.XPATH, "//a[@class='p text-default-font']")))
-
-    # get length of results
-    item_len = len(driver.find_elements(By.XPATH, "//a[@class='p text-default-font']"))
-    print("len is " + str(item_len))
-
-    for i in range(item_len):
-        print("iteration " + str(i))
-        while True:
-            try:
-                # get results
-                items = driver.find_elements(By.XPATH, "//a[@class='p text-default-font']")
-                # wait for i-th product to be clickable then click it
-                WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable(items[i])).click()
-                break
-            except:
-                driver.refresh()
-
-        # get details of i-th product
-        while True:
-            item_name = driver.find_element(By.XPATH, "//h1[@class='my-0']")
-            try:
-                ActionChains(driver).move_to_element(item_name).perform()
-                print("Item name is " + item_name.text)
-                break
-            except:
-                driver.refresh()
-
-        while True:
-            item_weight = driver.find_element(By.XPATH, "//span[@class='text-black-50 font-weight-bold']")
-            try:
-                ActionChains(driver).move_to_element(item_weight).perform()
-                print("Item weight is " + item_weight.text)
-                break
-            except:
-                driver.refresh()
-
-        while True:
-            item_price = driver.find_element(By.XPATH, "//span[@class='product-price h4 m-0 font-weight-bold']")
-            try:
-                ActionChains(driver).move_to_element(item_price).perform()
-                print("Item price is " + str(item_price.text))
-                break
-            except:
-                driver.refresh()
-        # navigate back to search results
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable(driver.find_element(By.XPATH, "//a[@class='pull-left']"))).click()
-
 
 
 def generate_inputfile(raw: Dict[str, Any], items):
@@ -199,8 +118,6 @@ def getIngredients(raw: Dict[str, Any]):
 @app.route('/', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
-        #webscrape()
-
         js = request.json
         print(js)
 
