@@ -14,6 +14,6 @@ def get_relevant_webstore_data(ingredients):
 
     findings = []
     for ing in ingredients:
-        findings += list(collection.find({"nname": {"$regex": ing}}))
+        findings += list(collection.find({"tag": {"$regex": ing}}))
 
     return findings

@@ -39,7 +39,7 @@ def generate_inputfile(raw: Dict[str, Any], items):
     instance += "\n"
 
     for i in items:
-        instance += f"i_costs{i['tag'], i['weight'], i['price']}.\n"
+        instance += f"i_costs{i['tag'], i['weight'], i['price']}.\n".replace("'", "")
 
     instance += "\n"
 
