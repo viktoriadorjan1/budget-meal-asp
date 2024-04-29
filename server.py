@@ -21,11 +21,6 @@ def generate_inputfile(raw: Dict[str, Any], items):
 
     instance += "\n"
 
-    instance += "meal(lunch).\n"
-    instance += "meal(dinner).\n"
-
-    instance += "\n"
-
     instance += "nutrient(energy).\n"
     instance += "nutrient(protein).\n"
     instance += "nutrient(fats).\n"
@@ -36,6 +31,13 @@ def generate_inputfile(raw: Dict[str, Any], items):
 
     instance += "\n"
 
+    for r, cs in raw["meal"].items():
+        for c in cs:
+            instance += f"meal({c}).\n"
+            instance += f"meal_type({r}, {c}).\n"
+
+    instance += "\n"
+
     for i in items:
         instance += f"i_costs{i['tag'], i['weight'], i['price']}.\n"
 
@@ -43,11 +45,6 @@ def generate_inputfile(raw: Dict[str, Any], items):
 
     for r in raw["recipe"]:
         instance += f"recipe({r}).\n"
-
-    # instance += "\n"
-
-    # for i in raw["ingredient"]:
-    #    instance += f"ingredient({i}).\n"
 
     instance += "\n"
 
@@ -118,6 +115,8 @@ def getIngredients(raw: Dict[str, Any]):
 @app.route('/', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
+        print("Received request!")
+
         js = request.json
         print(js)
 
@@ -152,4 +151,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=7900)
+    app.run(debug=True, host="0.0.0.0", port=5000)
