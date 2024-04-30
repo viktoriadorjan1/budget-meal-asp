@@ -1,6 +1,5 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-import certifi
 
 
 def get_relevant_webstore_data(ingredients):
