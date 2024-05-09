@@ -583,7 +583,7 @@ def home():
 
         # there were no ingredients requested
         if not allIngredients:
-            return "ERROR: try adding recipes with ingredients to your recipebook"
+            return "ERROR: you do not have any recipes. Try adding recipes to your recipebook!"
 
         # webscrape ingredients
         web_store = get_relevant_webstore_data(allIngredients)
