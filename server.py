@@ -4,7 +4,7 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from test import solve
-from webstores import get_relevant_webstore_data
+from webstores import get_relevant_webstore_data, check_if_exists
 
 app = Flask(__name__)
 
@@ -38,6 +38,11 @@ def generate_inputfile(raw: Dict[str, Any], items):
 
     instance += "\n"
 
+    # if there are no items found in the db, that means none of the ingredients were found or there were no
+    # ingredients needed to any of the recipes
+    if not items:
+        instance += f"i_costs(webstore_is_empty, 0, 0).\n"
+
     for i in items:
         instance += f"i_costs{i['tag'], i['weight'], i['price']}.\n".replace("'", "")
 
@@ -62,9 +67,12 @@ def generate_inputfile(raw: Dict[str, Any], items):
         for i, a in raw["needs"][r].items():
             instance += f"needs({r}, {i}, {a}).\n"
 
-    for r in raw["has_nutrient"]:
-        for n, a in raw["has_nutrient"][r].items():
-            instance += f"has_nutrient({r}, {n}, {a}).\n"
+    for entry in raw["ing_has_nutrient"]:
+        ingName = entry["ingName"]
+        ingAmount = entry["ingAmount"]
+        nutrName = entry["nutrName"]
+        nutrAmount = entry["nutrAmount"]
+        instance += f"ing_has_nutrient({ingName}, {ingAmount}, {nutrName}, {nutrAmount}).\n"
 
     file_w = open("input.txt", "w")
     file_w.write(instance)
@@ -72,26 +80,42 @@ def generate_inputfile(raw: Dict[str, Any], items):
     encodings = '''
 % the amount of times the recipe has been scheduled for the week
 schedule_count(R, C) :- C = #count {D,M : schedule(R, D, M)}, recipe(R).
-        
+
+% calculates the amount of nutrient a recipe has
+recipe_has_nutrient(R,N,T) :- T = #sum{FA: ing_has_nutrient(I, Q, N, NA), needs(R,I,IA), FA=((IA*100*NA/Q))/100}, recipe(R), nutrient(N).
+
 % decides whether the amount we need to buy of an ingredient is integer or not.
-int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R, C).
+int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R,C).
 % buy amount A of ingredient I for a certain recipe R with total cost of T.
 % two cases when it is an integer and when it is not in which case we need to buy 1 more (ceil function)
 buy(R, I, A, T) :- T = P*A, T > 0, int(R, I, A), recipe(R), i_costs(I, A1, P).
-buy(R, I, A, T) :- T = P*A, T > 0, C > 0, A = (((A2 * C)-A3) / A1)+1, not int(R, I, _), recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R, C).
+buy(R, I, A, T) :- T = P*A, T > 0, C > 0, A = (((A2 * C)-A3) / A1)+1, not int(R, I, _), recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R,C).
 
 % total price is the sum of costs of ingredients we need to buy.
 total_cost(S) :- S = #sum {T,R,I,A : buy(R, I, A, T)}.
 
-% schedule exactly one cookable recipe for every day for every meal
-1 {schedule(R, D, M) : recipe(R)} 1 :- day(D), meal(M).
+% schedule exactly one recipe with correct meal type, for every day for every meal
+1 {schedule(R, D, M) : recipe(R), meal_type(R,M)} 1 :- day(D), meal(M).
+
+% do not schedule recipe if it needs an ingredient NOT in pantry or webstore
+:- schedule(R, _, _), recipe(R), needs(R, I, AN), not i_costs(I, _, _), A < AN, pantry_item(I, A).
 
 % ensure that 50-80g of protein is consumed within a day.
-:- #sum {A,R,D,M : schedule(R,D,M), has_nutrient(R, N, A)} < A2, nutrient_needed(N,A2, _), nutrient(N).
-:- #sum {A,R,D,M : schedule(R,D,M), has_nutrient(R, N, A)} > A3, nutrient_needed(N,_, A3), nutrient(N).
+%:- #sum {A,R,M : schedule(R,D,M), recipe_has_nutrient(R, N, A)} < A2, nutrient_needed(N,A2, _), day(D), nutrient(N).
+%:- #sum {A,R,M: schedule(R,D,M), recipe_has_nutrient(R, N, A)} > A3, nutrient_needed(N,_,A3), day(D), nutrient(N).
 
-% minimize total cost.
-#minimize {T : total_cost(T)}.'''
+daily_nutrient_sum(D, N, S) :- S = #sum {A,R,M : schedule(R,D,M), recipe_has_nutrient(R, N, A)}, day(D), nutrient(N).
+%full_nutrient_sum(N, T) :- T = #sum {S,D: daily_nutrient_sum(_, N, S), day(D)}, nutrient(N).
+
+% nutritional difference for the entire week
+daily_nutrient_diff(D, N, T) :- T = A2-S, S < A2, nutrient_needed(N,A2, _), day(D), nutrient(N), daily_nutrient_sum(D,N,S).
+daily_nutrient_diff(D, N, T) :- T = A3-S, S > A3, nutrient_needed(N,_, A3), day(D), nutrient(N), daily_nutrient_sum(D,N,S).
+daily_nutrient_diff(D, N, 0) :- S >= A2, S <= A3, nutrient_needed(N,A2, A3), day(D), nutrient(N), daily_nutrient_sum(D,N,S).
+
+% minimize the difference of being out of range for nutrients (most important: @2).
+#minimize {T @2: T = S, daily_nutrient_diff(_, _, S)}.
+% minimize total cost (less important important: @1)
+#minimize {T @1 : total_cost(T)}.'''
 
     file_w.write(encodings)
     file_w.close()
@@ -105,47 +129,47 @@ def get_json_content(json_filename: str):
     return json.dumps(js)
 
 
-def getIngredients(raw: Dict[str, Any]):
-    ingredients = []
+def get_all_ingredients(raw: Dict[str, Any]):
+    all_ingredients = []
     for i in raw["ingredient"]:
-        ingredients.append(i)
-    return ingredients
+        all_ingredients.append(i)
+    return all_ingredients
 
 
 def generate_ingredient_catalog():
     ingredient_catalog = {
         "vegetables": [
             "tomato",
-            "cherry_tomato",
+            "cherry tomato",
             "onion",
             "cucumber",
             "broccoli",
             "pepper",
-            "brussels_sprout",
+            "brussels sprout",
             "radish",
             "beetroot",
-            "bell_pepper",
+            "bell pepper",
             "zucchini",
             "pumpkin",
             "asparagus",
             "carrot",
-            "baby_carrot",
+            "baby carrot",
             "parsnip",
-            "spring_onion",
+            "spring onion",
             "potato",
             "spinach",
             "cauliflower",
-            "red_onion",
+            "red onion",
             "courgette",
             "celery",
-            "green_beans",
+            "green beans",
             "garlic",
-            "sweet_potato",
+            "sweet potato",
             "aubergine",
             "kale",
             "jalapeno",
             "avocado",
-            "sweet_corn",
+            "sweet corn",
             "cabbage",
             "leek",
             "lettuce",
@@ -227,53 +251,53 @@ def generate_ingredient_catalog():
         ],
         "mushroom": [
             "mushroom",
-            "shiitake_mushroom",
-            "wild_mushroom",
-            "chestnut_mushroom",
+            "shiitake mushroom",
+            "wild mushroom",
+            "chestnut mushroom",
         ],
         "grains": [
             "rice",
-            "white_rice",
-            "brown_rice",
-            "cereal_flakes",
-            "risotto_rice",
-            "jasmine_rice",
+            "white rice",
+            "brown rice",
+            "cereal flakes",
+            "risotto rice",
+            "jasmine rice",
             "bulgur",
             "grits",
             "sushi_rice",
         ],
         "dairy": [
             "milk",
-            "goat_milk",
+            "goat milk",
             "egg",
-            "duck_egg",
+            "duck egg",
             "yogurt",
-            "greek_yogurt",
+            "greek yogurt",
             "cream",
             "kefir",
             "butter",
-            "sour_cream",
-            "whipped_cream",
+            "sour cream",
+            "whipped cream",
             "margarine",
             "custard",
         ],
         "substitutes": [
-            "coconut_milk",
-            "almond_milk",
-            "soy_milk",
-            "oat_milk",
-            "rice_milk",
-            "cashew_milk",
-            "non-dairy_milk",
-            "almond_butter",
-            "vegan_butter",
-            "coconut_butter",
+            "coconut milk",
+            "almond milk",
+            "soy milk",
+            "oat milk",
+            "rice milk",
+            "cashew milk",
+            "non-dairy milk",
+            "almond butter",
+            "vegan butter",
+            "coconut butter",
             "tofu",
-            "vegan_mayo",
-            "non-dairy_yogurt",
-            "vegan_cheese",
-            "vegan_sausage",
-            "vegan_bacon",
+            "vegan mayo",
+            "non-dairy yogurt",
+            "vegan cheese",
+            "vegan sausage",
+            "vegan bacon",
             "quorn",
         ],
         "bakery": [
@@ -285,23 +309,23 @@ def generate_ingredient_catalog():
             "brioche",
             "bagel",
             "croissant",
-            "garlic_bread",
+            "garlic bread",
             "crumpet",
         ],
         "cheese": [
             "cheese",
             "parmesan",
-            "cream_cheese",
+            "cream cheese",
             "cheddar",
             "mozzarella",
             "feta",
-            "goat_cheese",
+            "goat cheese",
             "mascarpone",
-            "cottage_cheese",
+            "cottage cheese",
             "quark",
             "halloumi",
             "camambert",
-            "sot_cheese",
+            "sot cheese",
             "edam",
         ],
         "pasta": [
@@ -309,8 +333,8 @@ def generate_ingredient_catalog():
             "macaroni",
             "penne",
             "spaghetti",
-            "angel_hair",
-            "lasagna_sheets",
+            "angel hair pasta",
+            "lasagna sheets",
             "noodles",
             "rice_noodles",
             "gnocchi",
@@ -318,12 +342,12 @@ def generate_ingredient_catalog():
         "fish": [
             "fish",
             "salmon",
-            "smoked_salmon",
+            "smoked salmon",
             "cod",
             "tuna",
-            "sea_bass",
-            "fish_fillet",
-            "fish_fingers",
+            "sea bass",
+            "fish fillet",
+            "fish fingers",
             "catfish",
             "haddock",
             "caviar",
@@ -342,47 +366,47 @@ def generate_ingredient_catalog():
             "seaweed",
             "nori",
             "kelp",
-            "crab_stick",
+            "crab stick",
         ],
-        "meat_items": [
-            "chicken_breast",
-            "turkey_breast",
-            "duck_breast",
-            "chicken_thighs",
-            "chicken_wings",
-            "whole_chicken",
-            "whole_turkey",
-            "whole_duck",
+        "meat items": [
+            "chicken breast",
+            "turkey breast",
+            "duck breast",
+            "chicken thighs",
+            "chicken wings",
+            "whole chicken",
+            "whole turkey",
+            "whole duck",
             "bacon",
-            "minced_meat",
-            "minced_beef",
-            "minced_pork",
-            "minced_lamb",
-            "minced_turkey",
-            "beef_steak",
-            "pork_shoulder",
-            "lamb_shoulder",
-            "pork_loin",
-            "lamb_loin",
-            "pork_chops",
-            "lamb_chops",
-            "leg_of_lamb",
-            "pulled_pork",
+            "minced meat",
+            "minced beef",
+            "minced pork",
+            "minced lamb",
+            "minced turkey",
+            "beef steak",
+            "pork shoulder",
+            "lamb shoulder",
+            "pork loin",
+            "lamb loin",
+            "pork chops",
+            "lamb chops",
+            "leg of lamb",
+            "pulled pork",
             "ribs",
-            "pork_ribs",
-            "beef_ribs",
-            "pork_belly",
+            "pork ribs",
+            "beef ribs",
+            "pork belly",
             "sausage",
             "frankfurter",
             "bratwurst",
             "chorizo",
             "pancetta",
-            "chicken_nuggets",
+            "chicken nuggets",
             "meatballs",
             "pepperoni",
             "salami",
             "ham",
-            "burger_patty",
+            "burger patty",
             "rabbit",
             "beef",
             "chicken",
@@ -399,16 +423,16 @@ def generate_ingredient_catalog():
             "basil",
             "thyme",
             "ginger",
-            "garlic_powder",
+            "garlic powder",
             "oregano",
-            "chili_flakes",
-            "chili_powder",
+            "chili flakes",
+            "chili powder",
             "paprika",
             "rosemary",
-            "bay_leaf",
+            "bay leaf",
             "mint",
-            "all_season",
-            "white_pepper",
+            "all season",
+            "white pepper",
             "nutmeg",
             "cayenne",
             "turmeric",
@@ -417,112 +441,113 @@ def generate_ingredient_catalog():
         ],
         "baking": [
             "sugar",
-            "brown_sugar",
-            "granulated_sugar",
-            "maple_syrup",
-            "caramel_syrup",
-            "chocolate_syrup",
-            "golden_syrup",
-            "strawberry_syrup",
-            "demerara_sugar",
+            "brown sugar",
+            "granulated sugar",
+            "maple syrup",
+            "caramel syrup",
+            "chocolate syrup",
+            "golden syrup",
+            "strawberry syrup",
+            "demerara sugar",
             "yeast",
             "flour",
-            "self-raising_flour",
-            "whole_wheat_flour",
+            "self-raising flour",
+            "whole wheat flour",
             "vanilla",
             "honey",
-            "baking_powder",
-            "baking_soda",
-            "chocolate_chips",
-            "cocoa_powder",
-            "white_chocolate",
-            "white_chocolate_chips",
-            "dark_chocolate_chips",
-            "mint_extract",
-            "rum_extract",
-            "almond_extract",
+            "baking powder",
+            "baking soda",
+            "chocolate chips",
+            "cocoa powder",
+            "white chocolate",
+            "white chocolate chips",
+            "dark chocolate chips",
+            "mint extract",
+            "rum extract",
+            "almond extract",
         ],
         "cupboard": [
             "breadcrumbs",
-            "peanut_butter",
+            "peanut butter",
             "jam",
-            "raspberry_jam",
-            "apricot_jam",
-            "peach_jam",
-            "strawberry_jam",
-            "blueberry_jam",
-            "lady_fingers",
+            "raspberry jam",
+            "apricot jam",
+            "peach jam",
+            "strawberry jam",
+            "blueberry jam",
+            "lady fingers",
             "waffles",
         ],
         "drinks": [
             "coffee",
-            "instant_coffee",
-            "decaf_coffee",
+            "instant coffee",
+            "decaf coffee",
             "tea",
-            "green_tea",
-            "chamomile_tea",
-            "jasmine_tea",
-            "english_breakfast_tea",
-            "earl_grey_tea",
-            "peppermint_tea",
-            "herbal_tea",
+            "green tea",
+            "chamomile tea",
+            "jasmine tea",
+            "english breakfast tea",
+            "earl grey tea",
+            "peppermint tea",
+            "herbal tea",
             "juice",
-            "orange_juice",
-            "cranberry_juice",
-            "pineapple_juice",
-            "apple_juice",
-            "matcha_powder",
+            "orange juice",
+            "cranberry juice",
+            "pineapple juice",
+            "apple juice",
+            "matcha powder",
             "lemonade",
             "coke",
             "sprite",
         ],
         "oils": [
             "oil",
-            "olive_oil",
-            "extra_virgin_olive_oil",
-            "vegetable_oil",
-            "sunflower_oil",
-            "rapeseed_oil",
-            "coconut_oil",
-            "cooking_spray",
-            "sesame_oil",
-            "pork_fat",
-            "beef_fat",
-            "duck_fat",
-            "lamb_fat",
-            "goose_fat",
+            "olive oil",
+            "extra virgin olive oil",
+            "vegetable oil",
+            "sunflower oil",
+            "rapeseed oil",
+            "coconut oil",
+            "cooking spray",
+            "sesame oil",
+            "pork fat",
+            "beef fat",
+            "duck fat",
+            "lamb fat",
+            "goose fat",
         ],
         "dressing": [
             "mayo",
             "ketchup",
-            "bbq_sauce",
+            "bbq sauce",
             "mustard",
             "vinegar",
-            "white_vinegar",
-            "balsamic_vinegar",
-            "red_wine_vinegar",
-            "white_wine_vinegar",
-            "rice_wine_vinegar",
-            "malt_vinegar",
-            "soy_sauce",
-            "wholegrain_mustard",
-            "tomato_paste",
-            "tomato_sauce",
+            "white vinegar",
+            "balsamic vinegar",
+            "red_wine vinegar",
+            "white wine vinegar",
+            "rice wine vinegar",
+            "malt vinegar",
+            "soy sauce",
+            "wholegrain mustard",
+            "tomato paste",
+            "tomato sauce",
             "salsa",
             "pesto",
             "hummus",
             "gravy",
-            "vegetable_gravy",
-            "beef_gravy",
-            "liver_pate",
-            "curry_sauce",
-            "lemon_juice",
-            "lime_juice",
+            "vegetable gravy",
+            "beef gravy",
+            "liver pate",
+            "curry sauce",
+            "lemon juice",
+            "lime juice",
         ],
         "soups": [
-            "chicken_stock",
-            "beef_stock",
-            "vegetable_stock"
+            "stock",
+            "chicken stock",
+            "beef stock",
+            "vegetable stock"
         ],
     }
 
@@ -534,12 +559,14 @@ def ingredients():
     if request.method == "POST":
         print("Ingredients")
         ret = generate_ingredient_catalog()
+        # print(check_if_exists())
+        # upload_all_ingredients_to_wish_list_db(ret)
         return ret
     else:
         return '''
                 <form action="#" method="post">
                     <textarea name="getcontent"></textarea>
-            	    <p><input type="submit" value="generate meal plan"/></p>
+                    <p><input type="submit" value="generate meal plan"/></p>
                 </form>
                 '''
 
@@ -552,9 +579,16 @@ def home():
         js = request.json
         print(js)
 
-        webstore = get_relevant_webstore_data(getIngredients(js))
+        allIngredients = get_all_ingredients(js)
 
-        generate_inputfile(js, webstore)
+        # there were no ingredients requested
+        if not allIngredients:
+            return "ERROR: try adding recipes with ingredients to your recipebook"
+
+        # webscrape ingredients
+        web_store = get_relevant_webstore_data(allIngredients)
+
+        generate_inputfile(js, web_store)
 
         file = open("input.txt", "r")
         txt = file.read()
@@ -564,20 +598,35 @@ def home():
         file.write("")
         file.close()
 
+        print(txt)
+
         res = solve(txt)
+
+        # the database is empty, and you do not have recipes with owned ingredients that satisfy the constraints
+        if str(res) == "UNSAT":
+            file = open("input.txt", "r")
+            txt = file.read()
+            if "webstore_is_empty" in txt:
+                file.close()
+                return "ERROR: the requested ingredients are not in our database, and you do not have recipes with " \
+                       "owned ingredients that satisfy the constraints"
 
         file = open("output.txt", "r")
         ret = file.read()
         file.close()
 
-        return ret + " " + str(res)
+        # the given constraints are not possible
+        if str(res) == "UNSAT":
+            return "ERROR: it is not possible to create a meal plan as none satisfies the constraints."
+
+        return ret
         # return ''''''
     else:
         raw_str = get_json_content('raw.json')
         return '''
                 <form action="#" method="post">
                     <textarea name="getcontent">{raw_str}</textarea>
-            	    <p><input type="submit" value="generate meal plan"/></p>
+                    <p><input type="submit" value="generate meal plan"/></p>
                 </form>
                 '''.format(raw_str=raw_str)
 
