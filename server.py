@@ -571,6 +571,41 @@ def ingredients():
                 '''
 
 
+def generate_json_schedule(ret):
+    json_ret = "{"
+    facts = ret.split(' ')
+
+    fact_name_save = ""
+    params_save = []
+
+    for fact in facts:
+        print(f"fact: {fact}")
+        pieces = fact.removesuffix(')').split('(')
+        fact_name = '''"''' + pieces[0] + '''"'''
+
+        # write under same key
+        if fact_name_save != fact_name:
+            if fact_name_save != "":
+                json_ret += f"{fact_name_save} : {params_save}".replace("'", '''"''')
+                if fact != facts[-1]:
+                    json_ret += ",\n"
+            params_save = []
+        params_in_one = pieces[1].removesuffix('\n').removesuffix(')')
+        print(params_in_one)
+        params = params_in_one.split(',')
+
+        params_save.append(params)
+            #json_ret += f"], {fact_name} : [{params}".replace("'", '''"''')
+        fact_name_save = fact_name
+        #json_ret += f"{fact_name} : {params}".replace("'", '''"''')
+
+    json_ret += "}"
+
+    print(json_ret)
+    return json_ret
+
+
+
 @app.route('/meal_plan', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
@@ -598,7 +633,7 @@ def home():
         file.write("")
         file.close()
 
-        print(txt)
+        #print(txt)
 
         res = solve(txt)
 
@@ -619,7 +654,7 @@ def home():
         if str(res) == "UNSAT":
             return "ERROR: it is not possible to create a meal plan as none satisfies the constraints."
 
-        return ret
+        return generate_json_schedule(ret)
         # return ''''''
     else:
         raw_str = get_json_content('raw.json')
