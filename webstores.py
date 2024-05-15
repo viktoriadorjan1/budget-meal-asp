@@ -14,7 +14,16 @@ def get_relevant_webstore_data(ingredients):
 
     findings = []
     for ing in ingredients:
-        findings += list(collection.find({"tag": {"$regex": ing}}))
+        res = list(collection.find({"ingredientTag": ing}))
+        cheapest_name = res[0]['ingredientName']
+        cheapest_per_weight = res[0]['price'] / res[0]['weight']
+        for r in res:
+            price_per_weight = r['price'] / r['weight']
+            if price_per_weight < cheapest_per_weight:
+                cheapest_name = r['ingredientName']
+                cheapest_per_weight = price_per_weight
+        fin = list(collection.find({"ingredientTag": ing, "ingredientName": cheapest_name}))
+        findings += fin
 
     return findings
 

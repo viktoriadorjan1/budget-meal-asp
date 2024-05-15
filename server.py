@@ -13,7 +13,7 @@ def hello():
     return "Hello world"
 
 
-def generate_inputfile(raw: Dict[str, Any], items):
+def generate_inputfile(raw: Dict[str, Any], items: list):
     instance = ""
 
     instance += "day(monday).\n"
@@ -44,7 +44,9 @@ def generate_inputfile(raw: Dict[str, Any], items):
         instance += f"i_costs(webstore_is_empty, 0, 0).\n"
 
     for i in items:
-        instance += f"i_costs{i['tag'], i['weight'], i['price']}.\n".replace("'", "")
+        ingredient_tag = str(i['ingredientTag']).replace(" ", "_")
+        weight = int(i['weight'])
+        instance += f"i_costs{ingredient_tag, weight, i['price']}.\n".replace("'", "")
 
     instance += "\n"
 
@@ -78,6 +80,9 @@ def generate_inputfile(raw: Dict[str, Any], items):
     file_w.write(instance)
 
     encodings = '''
+% best costs
+i_best_costs(I, W, BP) :- pantry_item(I, _), i_costs(I,W,_), BP = #min{XX,1 : i_costs(I,W,XX)}.
+
 % the amount of times the recipe has been scheduled for the week
 schedule_count(R, C) :- C = #count {D,M : schedule(R, D, M)}, recipe(R).
 
@@ -85,11 +90,11 @@ schedule_count(R, C) :- C = #count {D,M : schedule(R, D, M)}, recipe(R).
 recipe_has_nutrient(R,N,T) :- T = #sum{FA: ing_has_nutrient(I, Q, N, NA), needs(R,I,IA), FA=((IA*100*NA/Q))/100}, recipe(R), nutrient(N).
 
 % decides whether the amount we need to buy of an ingredient is integer or not.
-int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R,C).
+int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_best_costs(I, A1, P), schedule_count(R,C).
 % buy amount A of ingredient I for a certain recipe R with total cost of T.
 % two cases when it is an integer and when it is not in which case we need to buy 1 more (ceil function)
-buy(R, I, A, T) :- T = P*A, T > 0, int(R, I, A), recipe(R), i_costs(I, A1, P).
-buy(R, I, A, T) :- T = P*A, T > 0, C > 0, A = (((A2 * C)-A3) / A1)+1, not int(R, I, _), recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(I, A1, P), schedule_count(R,C).
+buy(R, I, A, T) :- T = P*A, T > 0, int(R, I, A), recipe(R), i_best_costs(I, A1, P).
+buy(R, I, A, T) :- T = P*A, T > 0, C > 0, A = (((A2 * C)-A3) / A1)+1, not int(R, I, _), recipe(R), needs(R, I, A2), pantry_item(I, A3), i_best_costs(I, A1, P), schedule_count(R,C).
 
 % total price is the sum of costs of ingredients we need to buy.
 total_cost(S) :- S = #sum {T,R,I,A : buy(R, I, A, T)}.
@@ -98,7 +103,7 @@ total_cost(S) :- S = #sum {T,R,I,A : buy(R, I, A, T)}.
 1 {schedule(R, D, M) : recipe(R), meal_type(R,M)} 1 :- day(D), meal(M).
 
 % do not schedule recipe if it needs an ingredient NOT in pantry or webstore
-:- schedule(R, _, _), recipe(R), needs(R, I, AN), not i_costs(I, _, _), A < AN, pantry_item(I, A).
+:- schedule(R, _, _), recipe(R), needs(R, I, AN), not i_best_costs(I, _, _), A < AN, pantry_item(I, A).
 
 % ensure that 50-80g of protein is consumed within a day.
 %:- #sum {A,R,M : schedule(R,D,M), recipe_has_nutrient(R, N, A)} < A2, nutrient_needed(N,A2, _), day(D), nutrient(N).
@@ -572,6 +577,7 @@ def ingredients():
 
 
 def generate_json_schedule(ret):
+    print("Generating JSON response...")
     json_ret = "{"
     facts = ret.split(' ')
 
@@ -602,8 +608,8 @@ def generate_json_schedule(ret):
     json_ret += "}"
 
     print(json_ret)
+    print("JSON DONE")
     return json_ret
-
 
 
 @app.route('/meal_plan', methods=["GET", "POST"])
@@ -614,16 +620,20 @@ def home():
         js = request.json
         print(js)
 
-        allIngredients = get_all_ingredients(js)
+        all_ingredients = get_all_ingredients(js)
 
         # there were no ingredients requested
-        if not allIngredients:
+        if not all_ingredients:
             return "ERROR: you do not have any recipes. Try adding recipes to your recipebook!"
 
         # webscrape ingredients
-        web_store = get_relevant_webstore_data(allIngredients)
+        web_store = get_relevant_webstore_data(all_ingredients)
+
+        print("Webstore is filled!")
 
         generate_inputfile(js, web_store)
+
+        print("Input file generated!")
 
         file = open("input.txt", "r")
         txt = file.read()
@@ -633,9 +643,11 @@ def home():
         file.write("")
         file.close()
 
-        #print(txt)
+        print("Solving...")
 
         res = solve(txt)
+
+        print("Solved!")
 
         # the database is empty, and you do not have recipes with owned ingredients that satisfy the constraints
         if str(res) == "UNSAT":
