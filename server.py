@@ -4,7 +4,7 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from test import solve
-from webstores import get_relevant_webstore_data, check_if_exists
+from webstores import get_relevant_webstore_data
 
 app = Flask(__name__)
 
@@ -15,9 +15,6 @@ def hello():
 
 def generate_inputfile(raw: Dict[str, Any], items: list):
     instance = ""
-
-    instance += "day(monday).\n"
-    instance += "day(tuesday).\n"
 
     instance += "\n"
 
@@ -31,9 +28,17 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
 
     instance += "\n"
 
+    for d in raw["day"]:
+        instance += f'day("{d}").\n'
+
+    instance += "\n"
+
+    for m in raw["meals"]:
+        instance += f'meal({m}).\n'
+
     for r, cs in raw["meal"].items():
         for c in cs:
-            instance += f"meal({c}).\n"
+            #instance += f"meal({c}).\n"
             instance += f"meal_type({r}, {c}).\n"
 
     instance += "\n"
@@ -141,417 +146,1597 @@ def get_all_ingredients(raw: Dict[str, Any]):
 
 def generate_ingredient_catalog():
     ingredient_catalog = {
-        "vegetables": [
-            "tomato",
-            "cherry tomato",
-            "onion",
-            "cucumber",
-            "broccoli",
-            "pepper",
-            "brussels sprout",
-            "radish",
-            "beetroot",
-            "bell pepper",
-            "zucchini",
-            "pumpkin",
-            "asparagus",
-            "carrot",
-            "baby carrot",
-            "parsnip",
-            "spring onion",
-            "potato",
-            "spinach",
-            "cauliflower",
-            "red onion",
-            "courgette",
-            "celery",
-            "green beans",
-            "garlic",
-            "sweet potato",
-            "aubergine",
-            "kale",
-            "jalapeno",
-            "avocado",
-            "sweet corn",
-            "cabbage",
-            "leek",
-            "lettuce",
-            "olive",
-            "green_olive",
-            "black_olive",
-            "pickle",
-        ],
-        "legumes": [
-            "peas",
-            "lentils",
-            "green_bean",
-            "chickpea",
-            "kidney_beans",
-            "red_lentils",
-            "green_lentils",
-            "edamame",
-            "red_beans",
-            "beans",
-            "soybeans",
-        ],
-        "fruit": [
-            "fruit",
-            "dried_fruit",
-            "apple",
-            "lemon",
-            "lime",
-            "banana",
-            "orange",
-            "mandarin",
-            "tangerine",
-            "nectarine",
-            "pineapple",
-            "mango",
-            "peach",
-            "date",
-            "coconut",
-            "pear",
-            "pomegranate",
-            "grape",
-            "melon",
-            "watermelon",
-            "apricot",
-            "kiwi",
-            "grapefruit",
-            "plum",
-            "fig",
-            "currant",
-            "raisin",
-            "prune",
-            "papaya",
-        ],
-        "berries": [
-            "berries",
-            "strawberry",
-            "blueberry",
-            "raspberry",
-            "cranberry",
-            "cherry",
-            "sour_cherry",
-            "blackberry",
-            "elderberry",
-        ],
-        "nuts": [
-            "nuts",
-            "chestnut",
-            "walnut",
-            "hazelnut",
-            "pecan",
-            "peanut",
-            "almond",
-            "cashew",
-            "pistachio",
-            "sesame_seed",
-            "chia_seed",
-            "pumpkin_seed",
-            "sunflower_seed",
-            "poppy_seed",
-        ],
-        "mushroom": [
-            "mushroom",
-            "shiitake mushroom",
-            "wild mushroom",
-            "chestnut mushroom",
-        ],
-        "grains": [
-            "rice",
-            "white rice",
-            "brown rice",
-            "cereal flakes",
-            "risotto rice",
-            "jasmine rice",
-            "bulgur",
-            "grits",
-            "sushi_rice",
-        ],
-        "dairy": [
-            "milk",
-            "goat milk",
-            "egg",
-            "duck egg",
-            "yogurt",
-            "greek yogurt",
-            "cream",
-            "kefir",
-            "butter",
-            "sour cream",
-            "whipped cream",
-            "margarine",
-            "custard",
-        ],
-        "substitutes": [
-            "coconut milk",
-            "almond milk",
-            "soy milk",
-            "oat milk",
-            "rice milk",
-            "cashew milk",
-            "non-dairy milk",
-            "almond butter",
-            "vegan butter",
-            "coconut butter",
-            "tofu",
-            "vegan mayo",
-            "non-dairy yogurt",
-            "vegan cheese",
-            "vegan sausage",
-            "vegan bacon",
-            "quorn",
-        ],
-        "bakery": [
-            "bread",
-            "tortilla",
-            "baguette",
-            "pita",
-            "sourdough",
-            "brioche",
-            "bagel",
-            "croissant",
-            "garlic bread",
-            "crumpet",
-        ],
-        "cheese": [
-            "cheese",
-            "parmesan",
-            "cream cheese",
-            "cheddar",
-            "mozzarella",
-            "feta",
-            "goat cheese",
-            "mascarpone",
-            "cottage cheese",
-            "quark",
-            "halloumi",
-            "camambert",
-            "sot cheese",
-            "edam",
-        ],
-        "pasta": [
-            "pasta",
-            "macaroni",
-            "penne",
-            "spaghetti",
-            "angel hair pasta",
-            "lasagna sheets",
-            "noodles",
-            "rice_noodles",
-            "gnocchi",
-        ],
-        "fish": [
-            "fish",
-            "salmon",
-            "smoked salmon",
-            "cod",
-            "tuna",
-            "sea bass",
-            "fish fillet",
-            "fish fingers",
-            "catfish",
-            "haddock",
-            "caviar",
-            "herring",
-        ],
-        "seafood": [
-            "prawns",
-            "shrimp",
-            "eel",
-            "crab",
-            "scallop",
-            "squid",
-            "lobster",
-            "oyster",
-            "octopus",
-            "seaweed",
-            "nori",
-            "kelp",
-            "crab stick",
-        ],
-        "meat items": [
-            "chicken breast",
-            "turkey breast",
-            "duck breast",
-            "chicken thighs",
-            "chicken wings",
-            "whole chicken",
-            "whole turkey",
-            "whole duck",
-            "bacon",
-            "minced meat",
-            "minced beef",
-            "minced pork",
-            "minced lamb",
-            "minced turkey",
-            "beef steak",
-            "pork shoulder",
-            "lamb shoulder",
-            "pork loin",
-            "lamb loin",
-            "pork chops",
-            "lamb chops",
-            "leg of lamb",
-            "pulled pork",
-            "ribs",
-            "pork ribs",
-            "beef ribs",
-            "pork belly",
-            "sausage",
-            "frankfurter",
-            "bratwurst",
-            "chorizo",
-            "pancetta",
-            "chicken nuggets",
-            "meatballs",
-            "pepperoni",
-            "salami",
-            "ham",
-            "burger patty",
-            "rabbit",
-            "beef",
-            "chicken",
-            "lamb",
-            "duck",
-            "goose",
-        ],
-        "spices": [
-            "salt",
-            "pepper",
-            "cinnamon",
-            "parsley",
-            "cumin",
-            "basil",
-            "thyme",
-            "ginger",
-            "garlic powder",
-            "oregano",
-            "chili flakes",
-            "chili powder",
-            "paprika",
-            "rosemary",
-            "bay leaf",
-            "mint",
-            "all season",
-            "white pepper",
-            "nutmeg",
-            "cayenne",
-            "turmeric",
-            "coriander",
-            "marjoram",
-        ],
-        "baking": [
-            "sugar",
-            "brown sugar",
-            "granulated sugar",
-            "maple syrup",
-            "caramel syrup",
-            "chocolate syrup",
-            "golden syrup",
-            "strawberry syrup",
-            "demerara sugar",
-            "yeast",
-            "flour",
-            "self-raising flour",
-            "whole wheat flour",
-            "vanilla",
-            "honey",
-            "baking powder",
-            "baking soda",
-            "chocolate chips",
-            "cocoa powder",
-            "white chocolate",
-            "white chocolate chips",
-            "dark chocolate chips",
-            "mint extract",
-            "rum extract",
-            "almond extract",
-        ],
-        "cupboard": [
-            "breadcrumbs",
-            "peanut butter",
-            "jam",
-            "raspberry jam",
-            "apricot jam",
-            "peach jam",
-            "strawberry jam",
-            "blueberry jam",
-            "lady fingers",
-            "waffles",
-        ],
-        "drinks": [
-            "coffee",
-            "instant coffee",
-            "decaf coffee",
-            "tea",
-            "green tea",
-            "chamomile tea",
-            "jasmine tea",
-            "english breakfast tea",
-            "earl grey tea",
-            "peppermint tea",
-            "herbal tea",
-            "juice",
-            "orange juice",
-            "cranberry juice",
-            "pineapple juice",
-            "apple juice",
-            "matcha powder",
-            "lemonade",
-            "coke",
-            "sprite",
-        ],
-        "oils": [
-            "oil",
-            "olive oil",
-            "extra virgin olive oil",
-            "vegetable oil",
-            "sunflower oil",
-            "rapeseed oil",
-            "coconut oil",
-            "cooking spray",
-            "sesame oil",
-            "pork fat",
-            "beef fat",
-            "duck fat",
-            "lamb fat",
-            "goose fat",
-        ],
-        "dressing": [
-            "mayo",
-            "ketchup",
-            "bbq sauce",
-            "mustard",
-            "vinegar",
-            "white vinegar",
-            "balsamic vinegar",
-            "red_wine vinegar",
-            "white wine vinegar",
-            "rice wine vinegar",
-            "malt vinegar",
-            "soy sauce",
-            "wholegrain mustard",
-            "tomato paste",
-            "tomato sauce",
-            "salsa",
-            "pesto",
-            "hummus",
-            "gravy",
-            "vegetable gravy",
-            "beef gravy",
-            "liver pate",
-            "curry sauce",
-            "lemon juice",
-            "lime juice",
-        ],
-        "soups": [
-            "stock",
-            "chicken stock",
-            "beef stock",
-            "vegetable stock"
-        ],
+        "vegetables": {
+            "tomato": {
+                "whole": 1,
+                "grams": 123
+            },
+            "cherry tomato": {
+                "whole": 1,
+                "grams": 17
+            },
+            "onion": {
+                "whole": 1,
+                "grams": 94
+            },
+            "cucumber": {
+                "whole": 1,
+                "grams": 201
+            },
+            "broccoli": {
+                "whole": 1,
+                "grams": 300
+            },
+            "pepper": {
+                "whole": 1,
+                "grams": 144
+            },
+            "brussels sprout": {
+                "whole": 1,
+                "grams": 21
+            },
+            "radish": {
+                "whole": 1,
+                "grams": 4.5
+            },
+            "beetroot": {
+                "whole": 1,
+                "grams": 50
+            },
+            "bell pepper": {
+                "whole": 1,
+                "grams": 114
+            },
+            "zucchini": {
+                "pieces": 1,
+                "grams": 200
+            },
+            "pumpkin": {
+                "whole": 1,
+                "grams": 245
+            },
+            "asparagus": {
+                "whole": 1,
+                "grams": 15
+            },
+            "carrot": {
+                "whole": 1,
+                "grams": 46
+            },
+            "baby carrot": {
+                "whole": 1,
+                "grams": 10
+            },
+            "parsnip": {
+                "whole": 1,
+                "grams": 98
+            },
+            "spring onion": {
+                "whole": 1,
+                "grams": 15
+            },
+            "potato": {
+                "whole": 1,
+                "grams": 173
+            },
+            "spinach": {
+                "whole": 1,
+                "grams": 180
+            },
+            "cauliflower": {
+                "whole": 1,
+                "grams": 575
+            },
+            "red onion": {
+                "whole": 1,
+                "grams": 94
+            },
+            "courgette": {
+                "whole": 1,
+                "grams": 200
+            },
+            "celery": {
+                "whole": 1,
+                "grams": 40
+            },
+            "green beans": {
+                "whole": 1,
+                "grams": 5.5
+            },
+            "garlic": {
+                "whole": 1,
+                "cloves": 10,
+                "grams": 30
+            },
+            "sweet potato": {
+                "whole": 1,
+                "grams": 144
+            },
+            "eggplant": {
+                "whole": 1,
+                "grams": 566
+            },
+            "kale": {
+                "whole": 1,
+                "grams": 130
+            },
+            "jalapeno": {
+                "whole": 1,
+                "grams": 14
+            },
+            "avocado": {
+                "whole": 1,
+                "grams": 201
+            },
+            "sweet corn": {
+                "whole": 1,
+                "grams": 89
+            },
+            "cabbage": {
+                "whole": 1,
+                "grams": 750
+            },
+            "leek": {
+                "whole": 1,
+                "grams": 89
+            },
+            "lettuce": {
+                "whole": 1,
+                "grams": 539
+            },
+            "olive": {
+                "whole": 1,
+                "grams": 3.8
+            },
+            "green_olive": {
+                "whole": 1,
+                "grams": 2.7
+            },
+            "black_olive": {
+                "whole": 1,
+                "grams": 3.8
+            },
+            "pickle": {
+                "whole": 1,
+                "grams": 35
+            },
+        },
+        "legumes": {
+            "peas": {
+                "grams": 0
+            },
+            "lentils": {
+                "grams": 0
+            },
+            "green_bean": {
+                "grams": 0
+            },
+            "chickpea": {
+                "grams": 0
+            },
+            "kidney_beans": {
+                "grams": 0
+            },
+            "red_lentils": {
+                "grams": 0
+            },
+            "green_lentils": {
+                "grams": 0
+            },
+            "edamame": {
+                "grams": 0
+            },
+            "red_beans": {
+                "grams": 0
+            },
+            "beans": {
+                "grams": 0
+            },
+            "soybeans": {
+                "grams": 0
+            },
+        },
+        "fruit": {
+            "fruit": {
+                "whole": 0,
+                "grams": 0
+            },
+            "dried_fruit": {
+                "whole": 0,
+                "grams": 0
+            },
+            "apple": {
+                "whole": 1,
+                "grams": 182
+            },
+            "lemon": {
+                "whole": 1,
+                "grams": 84
+            },
+            "lime": {
+                "whole": 1,
+                "grams": 67
+            },
+            "banana": {
+                "whole": 1,
+                "grams": 118
+            },
+            "orange": {
+                "whole": 1,
+                "grams": 140
+            },
+            "mandarin": {
+                "whole": 1,
+                "grams": 74
+            },
+            "tangerine": {
+                "whole": 1,
+                "grams": 88
+            },
+            "nectarine": {
+                "whole": 1,
+                "grams": 156
+            },
+            "pineapple": {
+                "whole": 1,
+                "grams": 907
+            },
+            "mango": {
+                "whole": 1,
+                "grams": 336
+            },
+            "peach": {
+                "whole": 1,
+                "grams": 175
+            },
+            "date": {
+                "whole": 1,
+                "grams": 7.1
+            },
+            "pear": {
+                "whole": 1,
+                "grams": 178
+            },
+            "pomegranate": {
+                "whole": 1,
+                "grams": 282
+            },
+            "grape": {
+                "grapes": 1,
+                "grams": 4.9
+            },
+            "melon": {
+                "whole": 1,
+                "grams": 1800
+            },
+            "watermelon": {
+                "whole": 1,
+                "grams": 16000
+            },
+            "apricot": {
+                "whole": 1,
+                "grams": 35
+            },
+            "kiwi": {
+                "whole": 1,
+                "grams": 69
+            },
+            "grapefruit": {
+                "whole": 1,
+                "grams": 246
+            },
+            "plum": {
+                "whole": 1,
+                "grams": 66
+            },
+            "fig": {
+                "whole": 1,
+                "grams": 50
+            },
+            "currant": {
+                "whole": 0,
+                "grams": 0
+            },
+            "raisin": {
+                "whole": 0,
+                "grams": 0
+            },
+            "prune": {
+                "whole": 1,
+                "grams": 9.5
+            },
+            "papaya": {
+                "whole": 1,
+                "grams": 1250
+            },
+        },
+        "berries": {
+            "berries": {
+                "whole": 0,
+                "grams": 0
+            },
+            "strawberry": {
+                "whole": 1,
+                "grams": 12
+            },
+            "blueberry": {
+                "whole": 1,
+                "grams": 1.36
+            },
+            "raspberry": {
+                "whole": 1,
+                "grams": 2
+            },
+            "cranberry": {
+                "whole": 0,
+                "grams": 0
+            },
+            "cherry": {
+                "whole": 1,
+                "grams": 8.2
+            },
+            "sour_cherry": {
+                "whole": 1,
+                "grams": 8.2
+            },
+            "blackberry": {
+                "whole": 1,
+                "grams": 6.5
+            },
+            "elderberry": {
+                "whole": 0,
+                "grams": 0
+            }
+        },
+        "nuts": {
+            "nuts": {
+                "whole": 0,
+                "grams": 0
+            },
+            "chestnut": {
+                "whole": 1,
+                "grams": 8.4
+            },
+            "walnut": {
+                "whole": 1,
+                "grams": 4
+            },
+            "hazelnut": {
+                "whole": 0,
+                "grams": 0
+            },
+            "pecan": {
+                "whole": 1,
+                "grams": 1.49
+            },
+            "peanut": {
+                "whole": 1,
+                "grams": 1
+            },
+            "almond": {
+                "whole": 1,
+                "grams": 1.29
+            },
+            "cashew": {
+                "whole": 1,
+                "grams": 1.57
+            },
+            "pistachio": {
+                "whole": 1,
+                "grams": 0.7
+            },
+            "sesame_seed": {
+                "grams": 0
+            },
+            "chia_seed": {
+                "grams": 0
+            },
+            "pumpkin_seed": {
+                "whole": 0,
+                "grams": 0
+            },
+            "sunflower_seed": {
+                "whole": 0,
+                "grams": 0
+            },
+            "poppy_seed": {
+                "grams": 0
+            },
+        },
+        "mushroom": {
+            "mushroom": {
+                "whole": 1,
+                "grams": 12
+            },
+            "shiitake mushroom": {
+                "whole": 1,
+                "grams": 19
+            },
+            "wild mushroom": {
+                "whole": 1,
+                "grams": 12
+            },
+            "chestnut mushroom": {
+                "whole": 1,
+                "grams": 25
+            },
+        },
+        "grains": {
+            "rice": {
+                "grams": 0
+            },
+            "white rice": {
+                "grams": 0
+            },
+            "brown rice": {
+                "grams": 0
+            },
+            "cereal flakes": {
+                "grams": 0
+            },
+            "risotto rice": {
+                "grams": 0
+            },
+            "jasmine rice": {
+                "grams": 0
+            },
+            "bulgur": {
+                "grams": 0
+            },
+            "grits": {
+                "grams": 0
+            },
+            "sushi_rice": {
+                "grams": 0
+            }
+        },
+        "dairy": {
+            "milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "goat milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "egg": {
+                "whole": 0,
+            },
+            "duck egg": {
+                "whole": 0,
+            },
+            "yogurt": {
+                "ml": 100,
+                "grams": 104,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "greek yogurt": {
+                "ml": 100,
+                "grams": 118,
+                "tbsp": 6.79,
+                "tsp": 20.12,
+            },
+            "cream": {
+                "ml": 100,
+                "grams": 101,
+                "tbsp": 6.76,
+                "tsp": 20.28,
+            },
+            "kefir": {
+                "ml": 0,
+                "grams": 0,
+                "tbsp": 0,
+                "tsp": 0,
+            },
+            "butter": {
+                "grams": 100,
+                "tbsp": 7.05,
+                "tsp": 21.16,
+            },
+            "sour cream": {
+                "ml": 100,
+                "grams": 104,
+                "tbsp": 6.76,
+                "tsp": 20.3,
+            },
+            "whipped cream": {
+                "ml": 100,
+                "grams": 101,
+                "tbsp": 6.76,
+                "tsp": 20.3,
+            },
+            "margarine": {
+                "grams": 100,
+                "tbsp": 7.37,
+                "tsp": 22.12,
+            },
+            "custard": {
+                "grams": 100,
+                "tbsp": 6.56,
+                "tsp": 19.67,
+            },
+        },
+        "substitutes": {
+            "coconut milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "almond milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "soy milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "oat milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "rice milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "cashew milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "non-dairy milk": {
+                "ml": 100,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "almond butter": {
+                "grams": 100,
+                "tbsp": 7.05,
+                "tsp": 21.16,
+            },
+            "vegan butter": {
+                "grams": 100,
+                "tbsp": 7.05,
+                "tsp": 21.16,
+            },
+            "coconut butter": {
+                "grams": 100,
+                "tbsp": 7.05,
+                "tsp": 21.16,
+            },
+            "tofu": {
+                "grams": 0
+            },
+            "vegan mayo": {
+                "ml": 100,
+                "grams": 97.2,
+                "tbsp": 6.76,
+                "tsp": 20.3,
+            },
+            "non-dairy yogurt": {
+                "ml": 100,
+                "grams": 104,
+                "tbsp": 6.75,
+                "tsp": 20.3,
+            },
+            "vegan cheese": {
+                "grams": 0,
+            },
+            "vegan sausage": {
+                "whole": 1,
+                "grams": 56.75,
+            },
+            "vegan bacon": {
+                "whole": 1,
+                "grams": 21,
+            },
+            "quorn": {
+                "grams": 0,
+            }
+        },
+        "bakery": {
+            "bread": {
+                "whole": 0,
+                "grams": 0,
+            },
+            "tortilla": {
+                "whole": 0,
+            },
+            "baguette": {
+                "whole": 0,
+                "grams": 0,
+            },
+            "pita": {
+                "whole": 0,
+            },
+            "sourdough": {
+                "whole": 0,
+                "grams": 0,
+            },
+            "brioche": {
+                "whole": 0,
+                "grams": 0,
+            },
+            "bagel": {
+                "whole": 0,
+                "grams": 0,
+            },
+            "croissant": {
+                "whole": 0,
+            },
+            "garlic bread": {
+                "whole": 0,
+                "grams": 0,
+            },
+            "crumpet": {
+                "whole": 0,
+                "grams": 0,
+            }
+        },
+        "cheese": {
+            "cheese": {
+                "block": 0,
+                "grams": 0,
+            },
+            "parmesan": {
+                "block": 0,
+                "grams": 0,
+            },
+            "cream cheese": {
+                "ml": 100,
+                "grams": 95.1,
+                "tbsp": 7.11,
+                "tsp": 21.3
+            },
+            "cheddar": {
+                "block": 0,
+                "grams": 0,
+            },
+            "mozzarella": {
+                "ball": 0,
+                "grams": 0,
+            },
+            "feta": {
+                "block": 0,
+                "grams": 0,
+            },
+            "goat cheese": {
+                "block": 0,
+                "grams": 0,
+            },
+            "mascarpone": {
+                "grams": 100,
+                "tbsp": 7.11,
+                "tsp": 21.3
+            },
+            "cottage cheese": {
+                "grams": 100,
+                "tbsp": 7.11,
+                "tsp": 21.3
+            },
+            "quark": {
+                "grams": 100,
+                "tbsp": 7.11,
+                "tsp": 21.3
+            },
+            "halloumi": {
+                "blocks": 0,
+                "grams": 0,
+            },
+            "camambert": {
+                "whole": 0,
+                "grams": 0,
+            },
+            "sot cheese": {
+                "grams": 100,
+                "tbsp": 7.11,
+                "tsp": 21.3
+            },
+            "edam": {
+                "whole": 0,
+                "grams": 0,
+            }
+        },
+        "pasta": {
+            "pasta": {
+                "grams": 0
+            },
+            "macaroni": {
+                "grams": 0
+            },
+            "penne": {
+                "grams": 0
+            },
+            "spaghetti": {
+                "grams": 0
+            },
+            "angel hair pasta": {
+                "grams": 0
+            },
+            "lasagna sheets": {
+                "grams": 0
+            },
+            "noodles": {
+                "grams": 0
+            },
+            "rice_noodles": {
+                "grams": 0
+            },
+            "gnocchi": {
+                "grams": 0
+            }
+        },
+        "fish": {
+            "fish": {
+                "whole": 0,
+                "grams": 0
+            },
+            "salmon": {
+                "whole": 1,
+                "grams": 75
+            },
+            "smoked salmon": {
+                "whole": 1,
+                "grams": 75
+            },
+            "cod": {
+                "whole": 0,
+                "grams": 0
+            },
+            "tuna": {
+                "whole": 0,
+                "grams": 0
+            },
+            "sea bass": {
+                "whole": 0,
+                "grams": 0
+            },
+            "fish fillet": {
+                "whole": 0,
+                "grams": 0
+            },
+            "fish fingers": {
+                "whole": 1,
+                "grams": 49
+            },
+            "catfish": {
+                "whole": 0,
+                "grams": 0
+            },
+            "haddock": {
+                "whole": 0,
+                "grams": 0
+            },
+            "caviar": {
+                "grams": 0
+            },
+            "herring": {
+                "whole": 0,
+                "grams": 0
+            }
+        },
+        "seafood": {
+            "prawns": {
+                "whole": 1,
+                "grams": 5
+            },
+            "shrimp": {
+                "whole": 1,
+                "grams": 5
+            },
+            "eel": {
+                "whole": 0,
+                "grams": 0
+            },
+            "crab": {
+                "whole": 0,
+                "grams": 0
+            },
+            "scallop": {
+                "whole": 1,
+                "grams": 13
+            },
+            "squid": {
+                "whole": 1,
+                "grams": 150
+            },
+            "lobster": {
+                "whole": 1,
+                "grams": 150
+            },
+            "oyster": {
+                "whole": 1,
+                "grams": 25
+            },
+            "octopus": {
+                "whole": 0,
+                "grams": 0
+            },
+            "seaweed": {
+                "grams": 0
+            },
+            "nori": {
+                "grams": 0
+            },
+            "kelp": {
+                "grams": 0
+            },
+            "crab stick": {
+                "whole": 1,
+                "grams": 17.2
+            }
+        },
+        "meat items": {
+            "chicken breast": {
+                "whole": 1,
+                "grams": 189
+            },
+            "turkey breast": {
+                "whole": 0,
+                "grams": 0
+            },
+            "duck breast": {
+                "whole": 1,
+                "grams": 240
+            },
+            "chicken thighs": {
+                "whole": 1,
+                "grams": 130
+            },
+            "chicken wings": {
+                "whole": 1,
+                "grams": 26.79
+            },
+            "whole chicken": {
+                "whole": 1,
+                "grams": 1500
+            },
+            "whole turkey": {
+                "whole": 0,
+                "grams": 0
+            },
+            "whole duck": {
+                "whole": 0,
+                "grams": 0
+            },
+            "bacon": {
+                "stripe": 1,
+                "grams": 21
+            },
+            "minced meat": {
+                "grams": 0
+            },
+            "minced beef": {
+                "grams": 0
+            },
+            "minced pork": {
+                "grams": 0
+            },
+            "minced lamb": {
+                "grams": 0
+            },
+            "minced turkey": {
+                "grams": 0
+            },
+            "beef steak": {
+                "whole": 1,
+                "grams": 221
+            },
+            "pork shoulder": {
+                "whole": 1,
+                "grams": 175
+            },
+            "lamb shoulder": {
+                "whole": 1,
+                "grams": 210
+            },
+            "pork loin": {
+                "whole": 1,
+                "grams": 120
+            },
+            "lamb loin": {
+                "whole": 0,
+                "grams": 0
+            },
+            "pork chops": {
+                "whole": 1,
+                "grams": 187
+            },
+            "lamb chops": {
+                "whole": 1,
+                "grams": 1857
+            },
+            "leg of lamb": {
+                "whole": 1,
+                "grams": 1150
+            },
+            "pulled pork": {
+                "grams": 0
+            },
+            "ribs": {
+                "ribs": 0,
+                "grams": 0
+            },
+            "pork ribs": {
+                "ribs": 0,
+                "grams": 0
+            },
+            "beef ribs": {
+                "ribs": 0,
+                "grams": 0
+            },
+            "pork belly": {
+                "grams": 0
+            },
+            "sausage": {
+                "whole": 1,
+                "grams": 56.75
+            },
+            "frankfurter": {
+                "whole": 1,
+                "grams": 35
+            },
+            "bratwurst": {
+                "whole": 1,
+                "grams": 90
+            },
+            "chorizo": {
+                "whole": 1,
+                "grams": 200
+            },
+            "pancetta": {
+                "grams": 0
+            },
+            "chicken nuggets": {
+                "nugget": 1,
+                "grams": 16
+            },
+            "meatballs": {
+                "nugget": 1,
+                "grams": 28.35
+            },
+            "pepperoni": {
+                "slice": 1,
+                "grams": 4
+            },
+            "salami": {
+                "slice": 1,
+                "grams": 9.8
+            },
+            "ham": {
+                "slice": 1,
+                "grams": 28
+            },
+            "burger patty": {
+                "patty": 1,
+                "grams": 120
+            },
+            "rabbit": {
+                "whole": 0,
+                "grams": 0
+            },
+            "beef": {
+                "whole": 0,
+                "grams": 0
+            },
+            "chicken": {
+                "whole": 0,
+                "grams": 0
+            },
+            "lamb": {
+                "whole": 0,
+                "grams": 0
+            },
+            "duck": {
+                "whole": 0,
+                "grams": 0
+            },
+            "goose": {
+                "whole": 0,
+                "grams": 0
+            }
+        },
+        "spices": {
+            "salt": {
+                "grams": 100,
+                "tbsp": 5.85,
+                "tsp": 17.57,
+            },
+            "pepper": {
+                "grams": 100,
+                "tbsp": 14.49,
+                "tsp": 43.48,
+            },
+            "cinnamon": {
+                "grams": 100,
+                "tbsp": 12.82,
+                "tsp": 38.46,
+            },
+            "parsley": {
+                "grams": 100,
+                "tbsp": 62.5,
+                "tsp": 78.95,
+            },
+            "cumin": {
+                "grams": 100,
+                "tbsp": 16.63,
+                "tsp": 50,
+            },
+            "basil": {
+                "grams": 100,
+                "tbsp": 79.6,
+                "tsp": 239,
+            },
+            "thyme": {
+                "grams": 100,
+                "tbsp": 23.26,
+                "tsp": 71,
+            },
+            "ginger": {
+                "grams": 0,
+                "tbsp": 0,
+                "tsp": 0,
+            },
+            "garlic powder": {
+                "grams": 100,
+                "tbsp": 10.31,
+                "tsp": 30.93,
+            },
+            "oregano": {
+                "grams": 100,
+                "tbsp": 16.66,
+                "tsp": 55.55,
+            },
+            "chili flakes": {
+                "grams": 100,
+                "tbsp": 20,
+                "tsp": 100,
+            },
+            "chili powder": {
+                "grams": 100,
+                "tbsp": 16.92,
+                "tsp": 37.04,
+            },
+            "paprika": {
+                "grams": 100,
+                "tbsp": 14.71,
+                "tsp": 43.48,
+            },
+            "rosemary": {
+                "grams": 100,
+                "tbsp": 30.3,
+                "tsp": 83.33,
+            },
+            "bay leaf": {
+                "leaves": 1,
+                "grams": 0.2,
+                "tbsp": 0.11,
+                "tsp": 0.33,
+            },
+            "mint": {
+                "grams": 100,
+                "tbsp": 30.3,
+                "tsp": 83.33,
+            },
+            "all season": {
+                "grams": 100,
+                "tbsp": 14.08,
+                "tsp": 41.63,
+            },
+            "white pepper": {
+                "grams": 100,
+                "tbsp": 14.08,
+                "tsp": 41.63,
+            },
+            "nutmeg": {
+                "grams": 100,
+                "tbsp": 14.08,
+                "tsp": 41.63,
+            },
+            "cayenne": {
+                "grams": 100,
+                "tbsp": 14.08,
+                "tsp": 41.63,
+            },
+            "turmeric": {
+                "grams": 100,
+                "tbsp": 14.08,
+                "tsp": 41.63,
+            },
+            "coriander": {
+                "grams": 100,
+                "tbsp": 14.08,
+                "tsp": 41.63,
+            },
+            "marjoram": {
+                "grams": 100,
+                "tbsp": 14.08,
+                "tsp": 41.63,
+            }
+        },
+        "baking": {
+            "sugar": {
+                "grams": 100,
+                "tbsp": 8,
+                "tsp": 23.81,
+            },
+            "brown sugar": {
+                "grams": 100,
+                "tbsp": 8,
+                "tsp": 23.81,
+            },
+            "granulated sugar": {
+                "grams": 100,
+                "tbsp": 8,
+                "tsp": 23.81,
+            },
+            "maple syrup": {
+                "grams": 100,
+                "ml": 75.11,
+                "tbsp": 6.7,
+                "tsp": 20,
+            },
+            "caramel syrup": {
+                "grams": 100,
+                "tbsp": 4.87,
+                "tsp": 15.02
+            },
+            "chocolate syrup": {
+                "grams": 100,
+                "tbsp": 4.87,
+                "tsp": 15.02
+            },
+            "golden syrup": {
+                "grams": 100,
+                "ml": 75.11,
+                "tbsp": 6.7,
+                "tsp": 20,
+            },
+            "strawberry syrup": {
+                "grams": 100,
+                "tbsp": 4.87,
+                "tsp": 15.02
+            },
+            "demerara sugar": {
+                "grams": 100,
+                "tbsp": 8,
+                "tsp": 23.81,
+            },
+            "yeast": {
+                "grams": 100,
+                "tbsp": 1175,
+                "tsp": 3174.66,
+            },
+            "flour": {
+                "grams": 100,
+                "tbsp": 1175,
+                "tsp": 12.8,
+            },
+            "self-raising flour": {
+                "grams": 100,
+                "tbsp": 1175,
+                "tsp": 12.8,
+            },
+            "whole wheat flour": {
+                "grams": 100,
+                "tbsp": 1175,
+                "tsp": 12.8,
+            },
+            "vanilla": {
+                "grams": 100,
+                "ml": 113.74,
+                "tbsp": 7.69,
+                "tsp": 23.81,
+            },
+            "honey": {
+                "grams": 100,
+                "ml": 69.6,
+                "tbsp": 4.71,
+                "tsp": 14.1,
+            },
+            "baking powder": {
+                "grams": 100,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "baking soda": {
+                "grams": 100,
+                "tbsp": 5.88,
+                "tsp": 16.66,
+            },
+            "chocolate chips": {
+                "grams": 0
+            },
+            "cocoa powder": {
+                "grams": 100,
+                "tbsp": 13.1,
+                "tsp": 39.4,
+            },
+            "white chocolate": {
+                "grams": 0
+            },
+            "white chocolate chips": {
+                "grams": 0
+            },
+            "dark chocolate chips": {
+                "grams": 0
+            },
+            "mint extract": {
+                "grams": 100,
+                "ml": 113.74,
+                "tbsp": 7.69,
+                "tsp": 23.81,
+            },
+            "rum extract": {
+                "grams": 100,
+                "ml": 113.74,
+                "tbsp": 7.69,
+                "tsp": 23.81,
+            },
+            "almond extract": {
+                "grams": 100,
+                "ml": 113.74,
+                "tbsp": 7.69,
+                "tsp": 23.81,
+            }
+        },
+        "cupboard": {
+            "breadcrumbs": {
+                "grams": 0,
+            },
+            "peanut butter": {
+                "grams": 100,
+                "tbsp": 6.57,
+                "tsp": 19.7,
+            },
+            "jam": {
+                "grams": 100,
+                "tbsp": 5,
+                "tsp": 15,
+            },
+            "raspberry jam": {
+                "grams": 100,
+                "tbsp": 5,
+                "tsp": 15,
+            },
+            "apricot jam": {
+                "grams": 100,
+                "tbsp": 5,
+                "tsp": 15,
+            },
+            "peach jam": {
+                "grams": 100,
+                "tbsp": 5,
+                "tsp": 15,
+            },
+            "strawberry jam": {
+                "grams": 100,
+                "tbsp": 5,
+                "tsp": 15,
+            },
+            "blueberry jam": {
+                "grams": 100,
+                "tbsp": 5,
+                "tsp": 15,
+            },
+            "lady fingers": {
+                "whole": 1,
+                "grams": 11
+            },
+            "waffles": {
+                "whole": 1,
+                "grams": 75
+            },
+        },
+        "drinks": {
+            "coffee": {
+                "ml": 0,
+            },
+            "instant coffee": {
+                "grams": 0,
+            },
+            "decaf coffee": {
+                "grams": 0,
+            },
+            "tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "green tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "chamomile tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "jasmine tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "english breakfast tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "earl grey tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "peppermint tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "herbal tea": {
+                "bags": 0,
+                "ml": 0
+            },
+            "juice": {
+                "ml": 0
+            },
+            "orange juice": {
+                "ml": 0
+            },
+            "cranberry juice": {
+                "ml": 0
+            },
+            "pineapple juice": {
+                "ml": 0
+            },
+            "apple juice": {
+                "ml": 0
+            },
+            "matcha powder": {
+                "ml": 0
+            },
+            "lemonade": {
+                "ml": 0
+            },
+            "coke": {
+                "ml": 0
+            },
+            "sprite": {
+                "ml": 0
+            }
+        },
+        "oils": {
+            "oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "olive oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "extra virgin olive oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "vegetable oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "sunflower oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "rapeseed oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "coconut oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "cooking spray": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "sesame oil": {
+                "ml": 100,
+                "grams": 85,
+                "tbsp": 6.76,
+                "tsp": 20,
+            },
+            "pork fat": {
+                "grams": 100,
+                "tbsp": 7.8,
+                "tsp": 25,
+            },
+            "beef fat": {
+                "grams": 100,
+                "tbsp": 7.8,
+                "tsp": 25,
+            },
+            "duck fat": {
+                "grams": 100,
+                "tbsp": 7.8,
+                "tsp": 25,
+            },
+            "lamb fat": {
+                "grams": 100,
+                "tbsp": 7.8,
+                "tsp": 25,
+            },
+            "goose fat": {
+                "grams": 100,
+                "tbsp": 7.8,
+                "tsp": 25,
+            }
+        },
+        "dressing": {
+            "mayo": {
+                "ml": 100,
+                "grams": 97.2,
+                "tbsp": 6.76,
+                "tsp": 20.3,
+            },
+            "ketchup": {
+                "grams": 100,
+                "ml": 105,
+                "tbsp": 7.01,
+                "tsp": 21,
+            },
+            "bbq sauce": {
+                "grams": 100,
+                "ml": 105,
+                "tbsp": 7.01,
+                "tsp": 21,
+            },
+            "mustard": {
+                "grams": 100,
+                "ml": 105,
+                "tbsp": 7.01,
+                "tsp": 21,
+            },
+            "vinegar": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "white vinegar": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "balsamic vinegar": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "red_wine vinegar": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "white wine vinegar": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "rice wine vinegar": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "malt vinegar": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "soy sauce": {
+                "grams": 100,
+                "ml": 98.99,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "wholegrain mustard": {
+                "grams": 100,
+                "ml": 105,
+                "tbsp": 7.01,
+                "tsp": 21,
+            },
+            "tomato paste": {
+                "grams": 100,
+                "ml": 105,
+                "tbsp": 7.01,
+                "tsp": 21,
+            },
+            "tomato sauce": {
+                "grams": 100,
+                "ml": 105,
+                "tbsp": 7.01,
+                "tsp": 21,
+            },
+            "salsa": {
+                "grams": 100,
+                "tbsp": 5.56,
+                "tsp": 18.46,
+            },
+            "pesto": {
+                "grams": 100,
+                "tbsp": 5.56,
+                "tsp": 18.46,
+            },
+            "hummus": {
+                "grams": 100,
+                "tbsp": 5.56,
+                "tsp": 19.51,
+            },
+            "gravy": {
+                "ml": 0,
+            },
+            "vegetable gravy": {
+                "ml": 0,
+            },
+            "beef gravy": {
+                "ml": 0,
+            },
+            "liver pate": {
+                "g": 0,
+            },
+            "curry sauce": {
+                "g": 0,
+            },
+            "lemon juice": {
+                "grams": 100,
+                "ml": 103,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            },
+            "lime juice": {
+                "grams": 100,
+                "ml": 103,
+                "tbsp": 6.86,
+                "tsp": 20.6,
+            }
+        },
+        "soups": {
+            "stock": {
+                "whole": 1,
+                "grams": 10
+            },
+            "chicken stock": {
+                "whole": 1,
+                "grams": 10
+            },
+            "beef stock": {
+                "whole": 1,
+                "grams": 10
+            },
+            "vegetable stock": {
+                "whole": 1,
+                "grams": 10
+            },
+        },
     }
 
     return ingredient_catalog
@@ -563,7 +1748,7 @@ def ingredients():
         print("Ingredients")
         ret = generate_ingredient_catalog()
         # print(check_if_exists())
-        # upload_all_ingredients_to_wish_list_db(ret)
+        #upload_all_ingredients_to_wish_list_db(ret)
         return ret
     else:
         return '''
@@ -657,7 +1842,7 @@ def home():
                        "owned ingredients that satisfy the constraints"
 
         file = open("output.txt", "r")
-        ret = file.read()
+        ret = file.read().replace('"', '')
         file.close()
 
         # the given constraints are not possible

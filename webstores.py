@@ -52,11 +52,25 @@ def upload_all_ingredients_to_wish_list_db(ingredients: Dict[str, Any]):
     db = client["webstores"]
     collection = db["webstoreWishList"]
 
+    # delete previous items
+    collection.delete_many({})
+
     for cat in ingredients:
         for ing in ingredients[cat]:
-            print(f"{cat}: {ing}")
+            keys = ingredients[cat][ing].keys()
+            entries = ingredients[cat][ing]
+            keys_list = []
+            #print(f"{cat}: {ing} with {keys} and {entries}")
+
+            for k in keys:
+                keys_list.append(k)
+                #print(k)
+
             mydict = {
                 "ingredientName": ing,
-                "ingredientCategory": cat
+                "ingredientCategory": cat,
+                "possibleUnits": keys_list,
+                "unitConversions": entries
             }
+            #print(mydict)
             collection.insert_one(mydict)
