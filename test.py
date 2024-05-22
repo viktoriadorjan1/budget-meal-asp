@@ -17,7 +17,8 @@ def on_model(m):
 
 
 def solve(to_solve):
-    ctl = clingo.control.Control()
+    # enumerate all with --opt-mode=optN
+    ctl = clingo.control.Control(["--opt-mode=optN"])
     ctl.configuration.solve.models = 0
 
     ctl.add("base", [], to_solve)
