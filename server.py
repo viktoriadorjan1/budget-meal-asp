@@ -50,7 +50,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
         instance += f"i_costs(aldi, webstore_is_empty, webstore_is_empty, 0, 0).\n"
 
     for i in items:
-        ingredient_name = str(i['ingredientName']).replace(" ", "_").replace("-", "_").lower()
+        ingredient_name = str(i['ingredientName']).replace(" ", "_").replace("-", "_").replace(".", "").lower()
         ingredient_tag = str(i['ingredientTag']).replace(" ", "_").replace("-", "_")
         weight = int(i['weight'])
         # i_costs - ingredient costs e.g. i_costs(milk, 300, 200) = 300 ml milk for £2.00
@@ -1893,6 +1893,7 @@ def generate_json_schedule(ret):
 def home():
     if request.method == "POST":
         print("Received request!")
+        #js = "{'day': ['2024-05-28', '2024-05-29', '2024-05-30', '2024-05-31'], 'meals': ['dinner', 'breakfast', 'lunch'], 'meal': {'egg_and_avocado_toast': ['lunch', 'breakfast'], 'pasta': ['dinner']}, 'ingredient': ['avocado', 'egg', 'bread', 'tomato', 'onion', 'carrot', 'spaghetti', 'tomato_sauce'], 'recipe': ['egg_and_avocado_toast', 'pasta'], 'pantry_item': {'avocado': [2, 'whole'], 'egg': [4, 'whole'], 'bread': [1000, 'grams'], 'tomato': [0, 'grams'], 'onion': [0, 'grams'], 'carrot': [4, 'whole'], 'spaghetti': [0, 'grams'], 'tomato_sauce': [0, 'grams']}, 'nutrient_needed': {'energy': [1298, 1298], 'protein': [3200, 11400], 'fat': [2900, 5000], 'saturates': [0, 1400], 'carbs': [14600, 21100], 'sugar': [0, 2500], 'salt': [0, 600]}, 'needs': {'egg_and_avocado_toast': {'avocado': [2, 'whole'], 'egg': [4, 'whole'], 'bread': [1000, 'grams']}, 'pasta': {'tomato': [2, 'whole'], 'onion': [2, 'whole'], 'carrot': [1, 'whole'], 'spaghetti': [300, 'grams'], 'tomato_sauce': [500, 'ml']}}}"
 
         js = request.json
         print(js)
