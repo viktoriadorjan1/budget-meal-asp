@@ -50,9 +50,9 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
         instance += f"i_costs(aldi, webstore_is_empty, webstore_is_empty, 0, 0).\n"
 
     for i in items:
-        ingredient_name = str(i['ingredientName']).replace(" ", "_").replace("-", "_").replace(".", "").lower()
+        ingredient_name = ''.join(c for c in str(i['ingredientName']).replace(" ", "_").lower() if (c.isalnum()) | (c == "_")) #str(i['ingredientName']).replace(" ", "_").replace("-", "_").replace(".", "").replace("(", "_").replace(")", "_").replace("/", "_").lower()
         ingredient_tag = str(i['ingredientTag']).replace(" ", "_").replace("-", "_")
-        weight = int(i['weight'])
+        weight = int(i['weight'] * 100)
         # i_costs - ingredient costs e.g. i_costs(milk, 300, 200) = 300 ml milk for £2.00
         instance += f"i_costs(aldi, {ingredient_name}, {ingredient_tag}, {weight}, {i['price']}).\n".replace("'", "")
         # ing_has_nutrient - e.g. ing_has_nutrient(milk, 300, protein, 3) = 300 ml milk has 3g protein
@@ -65,7 +65,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
         protein = i['protein']
         salt = i['salt']
         if (energy != "UNSPECIFIED") & (fat != "UNSPECIFIED") & (saturates != "UNSPECIFIED") & (carbs != "UNSPECIFIED") & (sugar != "UNSPECIFIED") & (protein != "UNSPECIFIED") & (salt != "UNSPECIFIED"):
-            energy = int(str(i['energy']).removesuffix("kcal"))
+            energy = int(float(str(i['energy']).removesuffix("kcal")) * 100)
             fat = int(float(str(i['fat']).removeprefix('<').removeprefix('>').removesuffix("g")) * 100)
             saturates = int(float(str(i['saturates']).removeprefix('<').removeprefix('>').removesuffix("g")) * 100)
             carbs = int(float(str(i['carbs']).removeprefix('<').removeprefix('>').removesuffix("g")) * 100)
@@ -76,7 +76,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
                 # nutritional values meant for the entire product
                 nutrition_per = weight
             # nutritional values meant for given nutrition_per
-            nutrition_per = int(str(nutrition_per).removesuffix("g").removesuffix("ml"))
+            nutrition_per = int(float(str(nutrition_per).removesuffix("g").removesuffix("ml")) * 100)
             instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'energy', energy}.\n".replace("'", "")
             instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'fat', fat}.\n".replace("'", "")
             instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'saturates', saturates}.\n".replace("'", "")
@@ -105,20 +105,20 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
         unit = a[1]
         # if unit is grams or ml, use amount as given
         if (unit == "grams") | (unit == "ml"):
-            instance += f"pantry_item({i}, {amount}).\n"
+            instance += f"pantry_item({i}, {int(amount * 100)}).\n"
         # else if grams or ml is among the possible units, and conversion is possible, convert the amount
         elif ("grams" in get_possible_units(i)) & (get_unit_conversions(i).get("grams")!= 0):
             converted_amount = amount * get_unit_conversions(i).get("grams")
-            instance += f"pantry_item({i}, {converted_amount}).\n"
+            instance += f"pantry_item({i}, {int(converted_amount * 100)}).\n"
         elif ("ml" in get_possible_units(i)) & (get_unit_conversions(i).get("ml") != 0):
             converted_amount = amount * get_unit_conversions(i).get("ml")
-            instance += f"pantry_item({i}, {converted_amount}).\n"
+            instance += f"pantry_item({i}, {int(converted_amount * 100)}).\n"
         # otherwise not storing pantry item
 
     instance += "\n"
 
     for n, l in raw["nutrient_needed"].items():
-        instance += f"nutrient_needed({n}, {l[0]}, {l[1]}).\n"
+        instance += f"nutrient_needed({n}, {l[0] * 100}, {l[1] * 100}).\n"
 
     instance += "\n"
 
@@ -128,14 +128,14 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
             unit = a[1]
             # if unit is grams or ml, use amount as given
             if (unit == "grams") | (unit == "ml"):
-                instance += f"needs({r}, {i}, {amount}).\n"
+                instance += f"needs({r}, {i}, {int(amount * 100)}).\n"
             # else if grams or ml is among the possible units, and conversion is possible, convert the amount
             elif ("grams" in get_possible_units(i)) & (get_unit_conversions(i).get("grams")!= 0):
                 converted_amount = amount * get_unit_conversions(i).get("grams")
-                instance += f"needs({r}, {i}, {converted_amount}).\n"
+                instance += f"needs({r}, {i}, {int(converted_amount * 100)}).\n"
             elif ("ml" in get_possible_units(i)) & (get_unit_conversions(i).get("ml") != 0):
                 converted_amount = amount * get_unit_conversions(i).get("ml")
-                instance += f"needs({r}, {i}, {converted_amount}).\n"
+                instance += f"needs({r}, {i}, {int(converted_amount * 100)}).\n"
             else:
                 # cannot make recipe, do not schedule it
                 instance += f":- schedule({r}, _, _).\n"
