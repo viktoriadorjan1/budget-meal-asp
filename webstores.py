@@ -16,10 +16,12 @@ def get_relevant_webstore_data(ingredients):
     for ing in ingredients:
         ing = str(ing).replace("_", " ")
         # print(f"ingredients: {ingredients}")
+        # print(list(collection.find({})))
         res = list(collection.find({"ingredientTag": ing}))
         if not res:
             print(f"no {ing} in db")
             continue
+        #findings += res
         cheapest_name = res[0]['ingredientName']
         cheapest_per_weight = res[0]['price'] / res[0]['weight']
         for r in res:

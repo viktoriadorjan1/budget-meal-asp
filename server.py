@@ -37,10 +37,10 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
     for m in raw["meals"]:
         instance += f'meal({m}).\n'
 
-    for r, cs in raw["meal"].items():
-        for c in cs:
-            #instance += f"meal({c}).\n"
-            instance += f"meal_type({r}, {c}).\n"
+    for r, ms in raw["meal"].items():
+        for m in ms:
+            # instance += f"meal({c}).\n"
+            instance += f"meal_type({r}, {m}).\n"
 
     instance += "\n"
 
@@ -50,11 +50,14 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
         instance += f"i_costs(aldi, webstore_is_empty, webstore_is_empty, 0, 0).\n"
 
     for i in items:
-        ingredient_name = ''.join(c for c in str(i['ingredientName']).replace(" ", "_").lower() if (c.isalnum()) | (c == "_")) #str(i['ingredientName']).replace(" ", "_").replace("-", "_").replace(".", "").replace("(", "_").replace(")", "_").replace("/", "_").lower()
+        ingredient_name = ''.join(c for c in str(i['ingredientName']).replace(" ", "_").lower() if (c.isalnum()) | (
+                    c == "_"))  # str(i['ingredientName']).replace(" ", "_").replace("-", "_").replace(".", "").replace("(", "_").replace(")", "_").replace("/", "_").lower()
         ingredient_tag = str(i['ingredientTag']).replace(" ", "_").replace("-", "_")
         weight = int(i['weight'] * 100)
         # i_costs - ingredient costs e.g. i_costs(milk, 300, 200) = 300 ml milk for £2.00
         instance += f"i_costs(aldi, {ingredient_name}, {ingredient_tag}, {weight}, {i['price']}).\n".replace("'", "")
+        # i_unit
+        instance += f"i_unit({ingredient_name}, {i['unit']}).\n".replace("'", "")
         # ing_has_nutrient - e.g. ing_has_nutrient(milk, 300, protein, 3) = 300 ml milk has 3g protein
         nutrition_per = str(i['nutrition_per'])
         energy = i['energy']
@@ -64,7 +67,9 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
         sugar = i['sugars']
         protein = i['protein']
         salt = i['salt']
-        if (energy != "UNSPECIFIED") & (fat != "UNSPECIFIED") & (saturates != "UNSPECIFIED") & (carbs != "UNSPECIFIED") & (sugar != "UNSPECIFIED") & (protein != "UNSPECIFIED") & (salt != "UNSPECIFIED"):
+        if (energy != "UNSPECIFIED") & (fat != "UNSPECIFIED") & (saturates != "UNSPECIFIED") & (
+                carbs != "UNSPECIFIED") & (sugar != "UNSPECIFIED") & (protein != "UNSPECIFIED") & (
+                salt != "UNSPECIFIED"):
             energy = int(float(str(i['energy']).removesuffix("kcal")) * 100)
             fat = int(float(str(i['fat']).removeprefix('<').removeprefix('>').removesuffix("g")) * 100)
             saturates = int(float(str(i['saturates']).removeprefix('<').removeprefix('>').removesuffix("g")) * 100)
@@ -77,21 +82,28 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
                 nutrition_per = weight
             # nutritional values meant for given nutrition_per
             nutrition_per = int(float(str(nutrition_per).removesuffix("g").removesuffix("ml")) * 100)
-            instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'energy', energy}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'fat', fat}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'saturates', saturates}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'carbs', carbs}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'sugar', sugar}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'protein', protein}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, nutrition_per, 'salt', salt}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, nutrition_per, 'energy', energy}.\n".replace(
+                "'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, nutrition_per, 'fat', fat}.\n".replace("'",
+                                                                                                                   "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, nutrition_per, 'saturates', saturates}.\n".replace(
+                "'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, nutrition_per, 'carbs', carbs}.\n".replace(
+                "'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, nutrition_per, 'sugar', sugar}.\n".replace(
+                "'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, nutrition_per, 'protein', protein}.\n".replace(
+                "'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, nutrition_per, 'salt', salt}.\n".replace(
+                "'", "")
         else:
-            instance += f"ing_has_nutrient{ingredient_tag, 0, 'energy', 0}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, 0, 'fat', 0}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, 0, 'saturates', 0}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, 0, 'carbs', 0}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, 0, 'sugar', 0}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, 0, 'protein', 0}.\n".replace("'", "")
-            instance += f"ing_has_nutrient{ingredient_tag, 0, 'salt', 0}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, 0, 'energy', 0}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, 0, 'fat', 0}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, 0, 'saturates', 0}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, 0, 'carbs', 0}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, 0, 'sugar', 0}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, 0, 'protein', 0}.\n".replace("'", "")
+            instance += f"ing_has_nutrient{ingredient_name, ingredient_tag, 0, 'salt', 0}.\n".replace("'", "")
 
     instance += "\n"
 
@@ -107,7 +119,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
         if (unit == "grams") | (unit == "ml"):
             instance += f"pantry_item({i}, {int(amount * 100)}).\n"
         # else if grams or ml is among the possible units, and conversion is possible, convert the amount
-        elif ("grams" in get_possible_units(i)) & (get_unit_conversions(i).get("grams")!= 0):
+        elif ("grams" in get_possible_units(i)) & (get_unit_conversions(i).get("grams") != 0):
             converted_amount = amount * get_unit_conversions(i).get("grams")
             instance += f"pantry_item({i}, {int(converted_amount * 100)}).\n"
         elif ("ml" in get_possible_units(i)) & (get_unit_conversions(i).get("ml") != 0):
@@ -130,7 +142,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
             if (unit == "grams") | (unit == "ml"):
                 instance += f"needs({r}, {i}, {int(amount * 100)}).\n"
             # else if grams or ml is among the possible units, and conversion is possible, convert the amount
-            elif ("grams" in get_possible_units(i)) & (get_unit_conversions(i).get("grams")!= 0):
+            elif ("grams" in get_possible_units(i)) & (get_unit_conversions(i).get("grams") != 0):
                 converted_amount = amount * get_unit_conversions(i).get("grams")
                 instance += f"needs({r}, {i}, {int(converted_amount * 100)}).\n"
             elif ("ml" in get_possible_units(i)) & (get_unit_conversions(i).get("ml") != 0):
@@ -140,7 +152,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
                 # cannot make recipe, do not schedule it
                 instance += f":- schedule({r}, _, _).\n"
 
-    #for entry in raw["ing_has_nutrient"]:
+    # for entry in raw["ing_has_nutrient"]:
     #    ingName = entry["ingName"]
     #    ingAmount = entry["ingAmount"]
     #    nutrName = entry["nutrName"]
@@ -156,7 +168,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
 schedule_count(R, C) :- C = #count {D,M : schedule(R, D, M)}, recipe(R).
 
 % calculates the amount of nutrient a recipe has
-recipe_has_nutrient(R,N,T) :- T = #sum{FA: ing_has_nutrient(I, Q, N, NA), needs(R,I,IA), FA=((IA*100*NA/Q))/100}, recipe(R), nutrient(N).
+recipe_has_nutrient(R,N,T) :- T = #sum{FA: FA=IA*NA/Q, ing_has_nutrient(_, I, Q, N, NA), needs(R,I,IA)}, recipe(R), nutrient(N).
 
 % decides whether the amount we need to buy of an ingredient is integer or not.
 int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(_, _, I, A1, P), schedule_count(R,C).
@@ -1817,7 +1829,7 @@ def ingredients():
         print("Ingredients")
         ret = generate_ingredient_catalog()
         # print(check_if_exists())
-        #upload_all_ingredients_to_wish_list_db(ret)
+        # upload_all_ingredients_to_wish_list_db(ret)
         return ret
     else:
         return '''
@@ -1826,6 +1838,68 @@ def ingredients():
                     <p><input type="submit" value="generate meal plan"/></p>
                 </form>
                 '''
+
+
+def generate_json_schedule_smart(ret, items: list):
+    print("Generating JSON response...")
+    # start JSON with open bracket
+    json_ret = {"schedule": {}, "buy": {}}
+    # get facts (separated by spaces)
+    facts = ret.split(' ')
+
+    for fact in facts:
+        if fact == "":
+            continue
+        # for each fact
+        # split into pieces[0] = fact name, pieces[1] = parameters (e.g. 'sugar,0,25')
+        pieces = fact.removesuffix(')').split('(')
+        # save fact name with quotation marks (to make it JSON)
+        fact_name = '''"''' + pieces[0] + '''"'''
+        # get current parameters (e.g. 'sugar,0,25')
+        params_in_one = pieces[1].removesuffix('\n').removesuffix(')')
+        # split the parameters to a list (e.g. ['sugar', '0', '25']
+        params = params_in_one.split(',')
+
+        print(f"fact name is {fact_name}")
+
+        if fact_name == '''"schedule"''':
+            # schedule(cereal,"2024-06-18",breakfast)
+            recipe = params[0]
+            day = params[1]
+            meal = params[2]
+            json_ret["schedule"].update({
+                day: {
+                    meal: recipe
+                }
+            })
+        elif fact_name == '''"buy"''':
+            # buy(cereal,milk,1,aldi,cowbelle_welsh_semiskimmed_milk_llaeth_cymreig_hanner,215)
+            recipe = params[0]
+            tag = params[1]
+            amount = int(params[2])
+            store = params[3]
+            name = params[4]
+            price = int(params[5])
+            for i in items:
+                if tag == i['ingredientTag']:
+                    weight = int(i['weight'] * amount)
+                    category = i['ingredientCategory']
+            json_ret["buy"].update({
+                tag: {
+                    "recipe": recipe,
+                    "amount": amount,
+                    "store": store,
+                    "ingredientName": name,
+                    "price": price,
+                    "weight": weight,
+                    "category": category
+                }
+            })
+
+
+    print(json_ret)
+    print("JSON DONE")
+    return json_ret
 
 
 def generate_json_schedule(ret):
@@ -1839,7 +1913,6 @@ def generate_json_schedule(ret):
     params_save = []
 
     for fact in facts:
-        print(f"{fact}")
         if fact == "":
             continue
         # for each fact
@@ -1866,7 +1939,7 @@ def generate_json_schedule(ret):
             # start new fact group with no members so far
             params_save = []
         # get current parameters (e.g. 'sugar,0,25')
-        #print(f"pieces is {pieces}")
+        # print(f"pieces is {pieces}")
         params_in_one = pieces[1].removesuffix('\n').removesuffix(')')
         # split the parameters to a list (e.g. ['sugar', '0', '25']
         params = params_in_one.split(',')
@@ -1879,7 +1952,32 @@ def generate_json_schedule(ret):
         if fact == facts[-1]:
             # if this is the last fact
             # save last group
-            json_ret += f"{fact_name_save} : {params_save}".replace("'", '''"''')
+            json_ret += f",\n{fact_name_save} : {params_save}".replace("'", '''"''')
+
+        # print(pieces[0])
+        # if pieces[0] == "i_costs":
+        # print("ICOSTS")
+        # e.g. webStoreItemProperties["cowbelle_british_semiskimmed_milk_17_fat_4_pints"] = {
+        # "quantity" : 227304,
+        # "unit: "ml",
+        # "nutrients": {
+        # "energy": 4900,
+        # ...
+        # }
+        # }
+        # quantity = params[3]
+        # ingredientTag = params[2]
+        # unit = "ERROR"
+        # if "grams" in get_possible_units(ingredientTag):
+        #    unit = "grams"
+        # elif "ml" in get_possible_units(ingredientTag):
+        #    unit = "ml"
+        # webStoreItemProperties[params[1]] = {
+        #    "quantity": quantity,
+        #    "unit": unit,
+        #    "nutrients": {}
+        # }
+        # json_ret += f"webStoreItemProperties : {webStoreItemProperties[params[1]]}".replace("'", '''"''')
 
     # end JSON with close bracket
     json_ret += "}"
@@ -1893,7 +1991,6 @@ def generate_json_schedule(ret):
 def home():
     if request.method == "POST":
         print("Received request!")
-        #js = "{'day': ['2024-05-28', '2024-05-29', '2024-05-30', '2024-05-31'], 'meals': ['dinner', 'breakfast', 'lunch'], 'meal': {'egg_and_avocado_toast': ['lunch', 'breakfast'], 'pasta': ['dinner']}, 'ingredient': ['avocado', 'egg', 'bread', 'tomato', 'onion', 'carrot', 'spaghetti', 'tomato_sauce'], 'recipe': ['egg_and_avocado_toast', 'pasta'], 'pantry_item': {'avocado': [2, 'whole'], 'egg': [4, 'whole'], 'bread': [1000, 'grams'], 'tomato': [0, 'grams'], 'onion': [0, 'grams'], 'carrot': [4, 'whole'], 'spaghetti': [0, 'grams'], 'tomato_sauce': [0, 'grams']}, 'nutrient_needed': {'energy': [1298, 1298], 'protein': [3200, 11400], 'fat': [2900, 5000], 'saturates': [0, 1400], 'carbs': [14600, 21100], 'sugar': [0, 2500], 'salt': [0, 600]}, 'needs': {'egg_and_avocado_toast': {'avocado': [2, 'whole'], 'egg': [4, 'whole'], 'bread': [1000, 'grams']}, 'pasta': {'tomato': [2, 'whole'], 'onion': [2, 'whole'], 'carrot': [1, 'whole'], 'spaghetti': [300, 'grams'], 'tomato_sauce': [500, 'ml']}}}"
 
         js = request.json
         print(js)
@@ -1944,6 +2041,7 @@ def home():
         if str(res) == "UNSAT":
             return "ERROR: it is not possible to create a meal plan as none satisfies the constraints."
         # second to line has optimum value
+        #return generate_json_schedule_smart(ret[-2], items=web_store)
         return generate_json_schedule(ret[-2])
         # return ''''''
     else:
