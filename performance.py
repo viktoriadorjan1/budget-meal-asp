@@ -883,7 +883,7 @@ schedule_count(R, C) :- C = #count {D,M : schedule(R, D, M)}, recipe(R).
 recipe_has_nutrient(R,N,T) :- T = #sum{FA: FA=IA*NA/Q, ing_has_nutrient(_, I, Q, N, NA), needs(R,I,IA)}, recipe(R), nutrient(N).
 
 % decides whether the amount we need to buy of an ingredient is integer or not.
-int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(_, _, I, A1, P), schedule_count(R,C).
+int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3)) \ A1 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(_, _, I, A1, P), schedule_count(R,C).
 % buy amount A of ingredient I for a certain recipe R with total cost of T.
 % two cases when it is an integer and when it is not in which case we need to buy 1 more (ceil function)
 buy(R, I, A, S, IN, T) :- T = P*A, T > 0, int(R, I, A), recipe(R), i_costs(S, IN, I, A1, P).
@@ -916,7 +916,6 @@ daily_nutrient_diff(D, N, 0) :- S >= A2, S <= A3, nutrient_needed(N,A2, A3), day
 #minimize {T @1 : total_cost(T)}.
     '''
 
-    print(instance)
     return instance
 
 

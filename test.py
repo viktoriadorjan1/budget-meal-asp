@@ -10,7 +10,6 @@ class Context:
 
 
 def on_model(m):
-    # print(m)
     file = open("output.txt", "a")
     file.write(str(m) + "\n")
     file.close()
@@ -24,7 +23,6 @@ def solve(to_solve):
     ctl.add("base", [], to_solve)
     ctl.ground([("base", [])])
 
-    #return ctl.solve()
     return ctl.solve(on_model=on_model)
 
 

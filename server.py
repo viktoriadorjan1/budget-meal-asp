@@ -4,7 +4,7 @@ from typing import Dict, Any
 from flask import Flask, request
 
 from test import solve
-from webstores import get_relevant_webstore_data, upload_all_ingredients_to_wish_list_db, get_possible_units, \
+from webstores import get_relevant_webstore_data, get_possible_units, \
     get_unit_conversions
 
 app = Flask(__name__)
@@ -171,7 +171,7 @@ schedule_count(R, C) :- C = #count {D,M : schedule(R, D, M)}, recipe(R).
 recipe_has_nutrient(R,N,T) :- T = #sum{FA: FA=IA*NA/Q, ing_has_nutrient(_, I, Q, N, NA), needs(R,I,IA)}, recipe(R), nutrient(N).
 
 % decides whether the amount we need to buy of an ingredient is integer or not.
-int(R, I, (((A2 * C)-A3) / A1)) :- (((A2 * C)-A3) * 10 / A1) \ 10 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(_, _, I, A1, P), schedule_count(R,C).
+int(R, I, (((A2 * C)-A3) / A1)) :- ((A2 * C)-A3) \ A1 == 0, recipe(R), needs(R, I, A2), pantry_item(I, A3), i_costs(_, _, I, A1, P), schedule_count(R,C).
 % buy amount A of ingredient I for a certain recipe R with total cost of T.
 % two cases when it is an integer and when it is not in which case we need to buy 1 more (ceil function)
 buy(R, I, A, S, IN, T) :- T = P*A, T > 0, int(R, I, A), recipe(R), i_costs(S, IN, I, A1, P).
@@ -1826,9 +1826,7 @@ def generate_ingredient_catalog():
 @app.route('/ingredients', methods=["GET", "POST"])
 def ingredients():
     if request.method == "POST":
-        print("Ingredients")
         ret = generate_ingredient_catalog()
-        # print(check_if_exists())
         # upload_all_ingredients_to_wish_list_db(ret)
         return ret
     else:
@@ -1841,8 +1839,6 @@ def ingredients():
 
 
 def generate_json_schedule_smart(ret, items: list):
-    print("Generating JSON response...")
-    # start JSON with open bracket
     json_ret = {"schedule": {}, "buy": {}}
     # get facts (separated by spaces)
     facts = ret.split(' ')
@@ -1853,17 +1849,15 @@ def generate_json_schedule_smart(ret, items: list):
         # for each fact
         # split into pieces[0] = fact name, pieces[1] = parameters (e.g. 'sugar,0,25')
         pieces = fact.removesuffix(')').split('(')
-        # save fact name with quotation marks (to make it JSON)
-        fact_name = '''"''' + pieces[0] + '''"'''
+        # save fact name
+        fact_name = pieces[0]
         # get current parameters (e.g. 'sugar,0,25')
         params_in_one = pieces[1].removesuffix('\n').removesuffix(')')
         # split the parameters to a list (e.g. ['sugar', '0', '25']
         params = params_in_one.split(',')
 
-        print(f"fact name is {fact_name}")
-
-        if fact_name == '''"schedule"''':
-            # schedule(cereal,"2024-06-18",breakfast)
+        if fact_name == "schedule":
+            # e.g. schedule(cereal,"2024-06-18",breakfast)
             recipe = params[0]
             day = params[1]
             meal = params[2]
@@ -1872,8 +1866,8 @@ def generate_json_schedule_smart(ret, items: list):
                     meal: recipe
                 }
             })
-        elif fact_name == '''"buy"''':
-            # buy(cereal,milk,1,aldi,cowbelle_welsh_semiskimmed_milk_llaeth_cymreig_hanner,215)
+        elif fact_name == "buy":
+            # e.g. buy(cereal,milk,1,aldi,cowbelle_welsh_semiskimmed_milk_llaeth_cymreig_hanner,215)
             recipe = params[0]
             tag = params[1]
             amount = int(params[2])
@@ -1896,14 +1890,10 @@ def generate_json_schedule_smart(ret, items: list):
                 }
             })
 
-
-    print(json_ret)
-    print("JSON DONE")
     return json_ret
 
 
 def generate_json_schedule(ret):
-    print("Generating JSON response...")
     # start JSON with open bracket
     json_ret = "{"
     # get facts (separated by spaces)
@@ -1939,7 +1929,6 @@ def generate_json_schedule(ret):
             # start new fact group with no members so far
             params_save = []
         # get current parameters (e.g. 'sugar,0,25')
-        # print(f"pieces is {pieces}")
         params_in_one = pieces[1].removesuffix('\n').removesuffix(')')
         # split the parameters to a list (e.g. ['sugar', '0', '25']
         params = params_in_one.split(',')
@@ -1954,31 +1943,6 @@ def generate_json_schedule(ret):
             # save last group
             json_ret += f",\n{fact_name_save} : {params_save}".replace("'", '''"''')
 
-        # print(pieces[0])
-        # if pieces[0] == "i_costs":
-        # print("ICOSTS")
-        # e.g. webStoreItemProperties["cowbelle_british_semiskimmed_milk_17_fat_4_pints"] = {
-        # "quantity" : 227304,
-        # "unit: "ml",
-        # "nutrients": {
-        # "energy": 4900,
-        # ...
-        # }
-        # }
-        # quantity = params[3]
-        # ingredientTag = params[2]
-        # unit = "ERROR"
-        # if "grams" in get_possible_units(ingredientTag):
-        #    unit = "grams"
-        # elif "ml" in get_possible_units(ingredientTag):
-        #    unit = "ml"
-        # webStoreItemProperties[params[1]] = {
-        #    "quantity": quantity,
-        #    "unit": unit,
-        #    "nutrients": {}
-        # }
-        # json_ret += f"webStoreItemProperties : {webStoreItemProperties[params[1]]}".replace("'", '''"''')
-
     # end JSON with close bracket
     json_ret += "}"
 
@@ -1990,10 +1954,7 @@ def generate_json_schedule(ret):
 @app.route('/meal_plan', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
-        print("Received request!")
-
         js = request.json
-        print(js)
 
         all_ingredients = get_all_ingredients(js)
 
@@ -2001,14 +1962,10 @@ def home():
         if not all_ingredients:
             return "ERROR: you do not have any recipes. Try adding recipes to your recipebook!"
 
-        # webscrape ingredients
+        # get relevant web scraped ingredients
         web_store = get_relevant_webstore_data(all_ingredients)
 
-        print("Webstore is filled!")
-
         generate_inputfile(js, web_store)
-
-        print("Input file generated!")
 
         file = open("input.txt", "r")
         txt = file.read()
@@ -2018,11 +1975,7 @@ def home():
         file.write("")
         file.close()
 
-        print("Solving...")
-
         res = solve(txt)
-
-        print("Solved!")
 
         # the database is empty, and you do not have recipes with owned ingredients that satisfy the constraints
         if str(res) == "UNSAT":
@@ -2040,10 +1993,8 @@ def home():
         # the given constraints are not possible
         if str(res) == "UNSAT":
             return "ERROR: it is not possible to create a meal plan as none satisfies the constraints."
-        # second to line has optimum value
-        #return generate_json_schedule_smart(ret[-2], items=web_store)
+        # second last line has optimum value
         return generate_json_schedule(ret[-2])
-        # return ''''''
     else:
         raw_str = get_json_content('raw.json')
         return '''
