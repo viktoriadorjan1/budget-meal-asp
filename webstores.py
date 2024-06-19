@@ -107,7 +107,6 @@ def upload_all_ingredients_to_wish_list_db(ingredients: Dict[str, Any]):
 
             for k in keys:
                 keys_list.append(k)
-                # print(k)
 
             mydict = {
                 "ingredientName": ing,

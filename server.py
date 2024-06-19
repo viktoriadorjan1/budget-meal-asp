@@ -51,7 +51,7 @@ def generate_inputfile(raw: Dict[str, Any], items: list):
 
     for i in items:
         ingredient_name = ''.join(c for c in str(i['ingredientName']).replace(" ", "_").lower() if (c.isalnum()) | (
-                    c == "_"))  # str(i['ingredientName']).replace(" ", "_").replace("-", "_").replace(".", "").replace("(", "_").replace(")", "_").replace("/", "_").lower()
+                    c == "_"))
         ingredient_tag = str(i['ingredientTag']).replace(" ", "_").replace("-", "_")
         weight = int(i['weight'] * 100)
         # i_costs - ingredient costs e.g. i_costs(milk, 300, 200) = 300 ml milk for £2.00
@@ -1941,13 +1941,16 @@ def generate_json_schedule(ret):
         if fact == facts[-1]:
             # if this is the last fact
             # save last group
-            json_ret += f",\n{fact_name_save} : {params_save}".replace("'", '''"''')
+            if len(params_save) == 1:
+                json_ret += f",\n{fact_name_save} : {params_save}".replace("'", '''"''')
+            else:
+                json_ret += f"{fact_name_save} : {params_save}".replace("'", '''"''')
+
+
 
     # end JSON with close bracket
     json_ret += "}"
 
-    print(json_ret)
-    print("JSON DONE")
     return json_ret
 
 
